@@ -73,6 +73,10 @@ class WebSource implements PositionSource {
   private wakeLock: WakeLockSentinel | null = null;
 
   async start(onFix: (fix: RawFix) => void, onError: (message: string) => void) {
+    if (!window.isSecureContext) {
+      onError('GPS needs a secure (https) connection. On a phone, open the https:// address shown by "npm run phone".');
+      return;
+    }
     if (!('geolocation' in navigator)) {
       onError('GPS is not available on this device.');
       return;
@@ -91,7 +95,12 @@ class WebSource implements PositionSource {
           altitude: pos.coords.altitude,
           time: pos.timestamp,
         }),
-      (err) => onError(err.message || 'Unable to get location.'),
+      (err) =>
+        onError(
+          err.code === err.PERMISSION_DENIED
+            ? 'Location permission was denied. Allow location for this site in your browser settings, then try again.'
+            : err.message || 'Unable to get location.',
+        ),
       { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 },
     );
   }

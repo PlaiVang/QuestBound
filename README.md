@@ -36,6 +36,7 @@ All game state is derived from your run history. Editing or deleting a run recal
 ```bash
 npm install
 npm run dev      # web version (uses browser GPS + localStorage)
+npm run phone    # HTTPS on your LAN, to test GPS from a phone browser
 npm test         # unit tests (vitest)
 npm run build    # type-check + production build
 ```
