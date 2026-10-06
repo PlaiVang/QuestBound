@@ -1,0 +1,70 @@
+# ?? QuestBound
+
+A running app that turns your training into a fantasy RPG. Track runs with live GPS, keep a training log, and watch your hero level up, cross a world map, and defeat bosses — all powered by the kilometers you actually run.
+
+## Features
+
+**Training**
+- Live GPS run tracking with pause/resume. It keeps tracking with the screen off (Android foreground service) and recovers the run if the app crashes.
+- Manual run logging for treadmill or watch runs.
+- Run log grouped by week, with run details: per-km splits, best efforts, elevation, and an animated **route replay** on a map.
+- **Personal records**: fastest 1K / 5K / 10K, longest run, and biggest climb.
+- Stats dashboard: weekly distance, pace trend, and distance by class.
+- Units in km or miles. JSON backup export and import.
+
+**Game**
+- **XP and levels**: 10 XP per km plus 1 XP per minute. Titles go from Squire to Mythic.
+- **Run classes**: each run is auto-classified, and you can override the class.
+
+  | Class | Run type | Stat | Bonus |
+  | --- | --- | --- | --- |
+  | ?? Ranger | Long and easy | Endurance | Extra XP beyond 5 km |
+  | ??? Rogue | Fast or intervals | Speed | +25% XP |
+  | ??? Paladin | Steady and consistent | Stamina | Streak bonus |
+  | ?? Berserker | Hills | Strength | XP for climbing |
+- **World map**: your distance moves your hero through 9 regions. Each gate is guarded by a boss with a run challenge, such as "5 km in under 30:00".
+- **Quests**: a daily quest and 3 weekly quests.
+- **Achievements**: badges and level crests.
+- **Weekly streaks**: at least 2 runs per week.
+- **Gold and Merchant**: earn gold and spend it on real-life rewards you define.
+- **Overtraining guard**: distance far beyond your usual weekly volume earns reduced XP.
+
+All game state is derived from your run history. Editing or deleting a run recalculates everything.
+
+## Development
+
+```bash
+npm install
+npm run dev      # web version (uses browser GPS + localStorage)
+npm test         # unit tests (vitest)
+npm run build    # type-check + production build
+```
+
+## Android app
+
+Requirements: Android Studio, JDK 21, and an Android device.
+
+```bash
+npm run build
+npx cap sync android
+npx cap open android   # then Run ? on your phone
+```
+
+On the device, grant location permission ("While using the app") and allow notifications. The ongoing "QuestBound is tracking your run" notification is what keeps GPS alive with the screen off. For best results, disable battery optimization for QuestBound.
+
+## Tech
+
+Vite, React, and TypeScript, packaged with Capacitor 8.
+
+| Area | Library |
+| --- | --- |
+| Background GPS | `@capacitor-community/background-geolocation` |
+| Native storage | `@capacitor-community/sqlite` (localStorage on web) |
+| Maps | Leaflet with OpenStreetMap tiles |
+| Charts | Recharts |
+
+Code layout:
+- `src/game/`: rules engine (pure and unit-tested)
+- `src/tracking/`: live run session
+- `src/data/`: storage
+- `src/pages/`: screens
