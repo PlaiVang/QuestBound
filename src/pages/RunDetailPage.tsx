@@ -11,6 +11,8 @@ import { formatDateTime, formatDistance, formatDuration, formatPace, unitMeters 
 import { computeSplits, evenPaceSplits } from '../lib/geo';
 import { useGame } from '../state/GameContext';
 import { workoutProgress } from '../training/plans';
+import { PixelArt } from '../components/PixelArt';
+import { BOSS_ART } from '../art/sprites';
 
 export function RunDetailPage() {
   const { id = '' } = useParams();
@@ -89,7 +91,7 @@ export function RunDetailPage() {
           )}
           {report.classLevelAfter > report.classLevelBefore && (
             <p className="small">
-              {CLASSES[report.result.cls].icon} {CLASSES[report.result.cls].name} reached level {report.classLevelAfter}!
+              <PixelArt name={report.result.cls} /> {CLASSES[report.result.cls].name} reached level {report.classLevelAfter}!
             </p>
           )}
           {report.regionReached && (
@@ -110,7 +112,7 @@ export function RunDetailPage() {
           ))}
           {!run.training && !report.bossDefeated && attemptBoss && res.bossAttempt && (
             <p className="small">
-              {attemptBoss.icon} You hit the {attemptBoss.name} for {Math.round(res.bossAttempt.progress * 100)}% of its HP, but it still stands.
+              <PixelArt name={BOSS_ART[attemptBoss.id]} /> You hit the {attemptBoss.name} for {Math.round(res.bossAttempt.progress * 100)}% of its HP, but it still stands.
             </p>
           )}
           {res.fatigueMultiplier < 1 && <p className="small muted">😮‍💨 Your hero is tired this week: XP reduced. Rest up!</p>}
@@ -133,12 +135,12 @@ export function RunDetailPage() {
           <ClassChip id={cls} overridden={!!run.classOverride} />
         </div>
         <p className="small muted" style={{ marginTop: 0 }}>
-          Judged as {CLASSES[run.autoClass].icon} {CLASSES[run.autoClass].name}. Tap to change.
+          Judged as <PixelArt name={run.autoClass} /> {CLASSES[run.autoClass].name}. Tap to change.
         </p>
         <div className="segmented">
           {CLASS_IDS.map((c) => (
             <button key={c} aria-pressed={cls === c} className={cls === c ? 'on' : ''} onClick={() => setClass(c)}>
-              {CLASSES[c].icon} {CLASSES[c].name}
+              <PixelArt name={c} /> {CLASSES[c].name}
             </button>
           ))}
         </div>

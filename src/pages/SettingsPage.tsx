@@ -128,7 +128,7 @@ export function SettingsPage() {
         <ul>
           {CLASS_IDS.map((id) => (
             <li key={id}>
-              {CLASSES[id].icon} <b>{CLASSES[id].name}</b>: {CLASSES[id].description}
+              <PixelArt name={id} /> <b>{CLASSES[id].name}</b>: {CLASSES[id].description}
             </li>
           ))}
         </ul>
@@ -149,3 +149,4 @@ export function SettingsPage() {
     </>
   );
 }
+import { PixelArt } from '../components/PixelArt';

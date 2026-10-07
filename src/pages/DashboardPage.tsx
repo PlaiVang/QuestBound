@@ -6,8 +6,8 @@ import { formatDate, formatDistance, formatPace } from '../lib/format';
 import { useGame } from '../state/GameContext';
 import { runClass } from '../game/types';
 import { planName, workoutProgress } from '../training/plans';
-
-const AVATARS: Record<ClassId, string> = { ranger: '🧝', rogue: '🥷', paladin: '🤴', berserker: '🧔' };
+import { PixelArt } from '../components/PixelArt';
+import { BOSS_ART } from '../art/sprites';
 
 export function questProgressText(progress: number, target: number, unit: string) {
   if (unit === 'done') return progress >= target ? 'Done!' : 'Not yet';
@@ -19,7 +19,7 @@ export function DashboardPage() {
   const { game, runs, profile, trainingPlan } = useGame();
   const completed = trainingPlan?.sessions.filter(s => workoutProgress(s, runs).status === 'completed').length ?? 0;
   const main = CLASS_IDS.reduce((a, b) => (game.classes[b].xp > game.classes[a].xp ? b : a), 'paladin' as ClassId);
-  const avatar = runs.length ? AVATARS[main] : '🧙';
+  const avatar = runs.length ? main : 'hero';
   const activeBoss = game.world.bosses.find((b) => b.status === 'active');
   const recent = runs.slice().sort((a, b) => b.startedAt - a.startedAt).slice(0, 3);
   const maxStat = Math.max(20, ...game.stats.map((s) => s.value));
@@ -29,7 +29,7 @@ export function DashboardPage() {
     <>
       <section className="panel">
         <div className="row">
-          <div className="avatar">{avatar}</div>
+          <div className="avatar"><PixelArt name={avatar} size={64} label={runs.length ? CLASSES[main].name : 'QuestBound adventurer'} /></div>
           <div className="grow">
             <h1 style={{ marginBottom: 4 }}>{profile.heroName}</h1>
             <div className="muted small" style={{ marginBottom: 8 }}>
@@ -85,7 +85,7 @@ export function DashboardPage() {
           <div key={s.name} style={{ marginBottom: 10 }}>
             <div className="row between small">
               <span>
-                {CLASSES[s.classId].icon} {s.name}
+                <PixelArt name={s.classId} /> {s.name}
               </span>
               <span className="pixel tiny">{s.value}</span>
             </div>
@@ -95,7 +95,7 @@ export function DashboardPage() {
         <div className="row wrap" style={{ marginTop: 6 }}>
           {CLASS_IDS.map((id) => (
             <span key={id} className="chip">
-              {CLASSES[id].icon} {CLASSES[id].name} Lv {game.classes[id].level}
+              <PixelArt name={id} /> {CLASSES[id].name} Lv {game.classes[id].level}
             </span>
           ))}
         </div>
@@ -105,7 +105,7 @@ export function DashboardPage() {
         <Link to="/world" className="panel" style={{ display: 'block', color: 'inherit', textDecoration: 'none' }}>
           <h2>Realm boss (distance prototype)</h2>
           <div className="row">
-            <div className="icon-lg">{activeBoss.boss.icon}</div>
+            <div className="icon-lg"><PixelArt name={BOSS_ART[activeBoss.boss.id]} size={40} /></div>
             <div className="grow">
               <div className="pixel tiny">{activeBoss.boss.name}</div>
               <div className="small muted" style={{ margin: '4px 0' }}>
@@ -152,7 +152,7 @@ export function DashboardPage() {
           <div className="list">
             {recent.map((r) => (
               <Link key={r.id} to={`/runs/${r.id}`}>
-                <div className="icon-lg">{CLASSES[runClass(r)].icon}</div>
+                <div className="icon-lg"><PixelArt name={runClass(r)} size={32} /></div>
                 <div className="grow">
                   <div>{formatDistance(r.distanceM, profile.units)}</div>
                   <div className="small muted">
@@ -171,7 +171,7 @@ export function DashboardPage() {
           📊 Stats
         </Link>
         <Link to="/rewards" className="btn">
-          🎁 Shop
+          <PixelArt name="chest" /> Shop
         </Link>
         <Link to="/settings" className="btn">
           ⚙️ Setup

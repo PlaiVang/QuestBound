@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { db } from '../data/db';
 import type { Run } from '../game/types';
 import { routeOutline } from '../lib/routeOutline';
+import { PixelArt } from './PixelArt';
+import { runClass } from '../game/types';
 
-export function RunRouteThumbnail({ run, icon }: { run: Run; icon: string }) {
+export function RunRouteThumbnail({ run }: { run: Run }) {
   const container = useRef<HTMLSpanElement>(null);
   const [preview, setPreview] = useState<{ id: string; path: string | null; error: boolean } | null>(null);
   useEffect(() => {
@@ -36,7 +38,8 @@ export function RunRouteThumbnail({ run, icon }: { run: Run; icon: string }) {
   return <span ref={container} className="run-route-thumbnail" title={label}>
     {current?.path ? <svg viewBox="0 0 96 96" role="img" aria-label={label}>
       <path d={current.path} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-    </svg> : <span role="img" aria-label={label}>{current?.error ? '!' : icon}</span>}
+    </svg> : current?.error ? <span role="img" aria-label={label}>!</span>
+      : <PixelArt name={runClass(run)} size={48} label={label} />}
     {current?.error && <span className="tiny" role="status">Preview unavailable</span>}
   </span>;
 }

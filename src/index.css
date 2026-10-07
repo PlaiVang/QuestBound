@@ -441,6 +441,9 @@ label.field > span {
 .history-run-metrics, .history-run-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
 .history-run-metrics > *, .history-run-meta > * { max-width: 100%; overflow-wrap: anywhere; }
 
+.pixel-art { display: inline-block; vertical-align: middle; flex-shrink: 0; image-rendering: pixelated; }
+.chip .pixel-art { width: 20px; height: 20px; }
+
 .big-number {
   font-family: var(--pixel);
   font-size: 2rem;

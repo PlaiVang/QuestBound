@@ -2,6 +2,8 @@ import { Bar } from '../components/ui';
 import { REGIONS } from '../game/world';
 import { formatDistance } from '../lib/format';
 import { useGame } from '../state/GameContext';
+import { PixelArt } from '../components/PixelArt';
+import { BOSS_ART } from '../art/sprites';
 
 const SCENERY: [string, number, number][] = [
   ['🌲', 26, 70], ['🌲', 44, 72], ['🌳', 30, 90], ['🌲', 50, 92], ['🌾', 70, 93], ['🪨', 90, 82],
@@ -62,9 +64,9 @@ export function WorldPage() {
           return (
             <g key={r.id}>
               <circle cx={r.x} cy={r.y} r="4.2" fill={fill} stroke="#0d0914" strokeWidth="1" />
-              <text x={r.x} y={r.y + 1.6} fontSize="4.4" textAnchor="middle">
-                {s === 'locked' ? '❔' : s === 'active' ? r.boss!.icon : r.icon}
-              </text>
+              {s === 'active' || s === 'locked' ? <svg x={r.x - 3} y={r.y - 3} width="6" height="6" viewBox="0 0 16 16">
+                <PixelArt name={s === 'locked' ? 'unknown' : BOSS_ART[r.boss!.id]} size={16} />
+              </svg> : <text x={r.x} y={r.y + 1.6} fontSize="4.4" textAnchor="middle">{r.icon}</text>}
               <text x={r.x} y={r.y + 8} fontSize="2.6" textAnchor="middle" fill="#fff" stroke="#0d0914" strokeWidth="0.5" paintOrder="stroke" fontFamily="var(--pixel)">
                 {r.name}
               </text>
@@ -73,9 +75,7 @@ export function WorldPage() {
         })}
         <g style={{ transition: 'transform 1s ease' }} transform={`translate(${hx} ${hy - 6.5})`}>
           <circle r="3.4" fill="#4fc3f7" stroke="#0d0914" strokeWidth="0.8" />
-          <text y="1.4" fontSize="4" textAnchor="middle">
-            🧙
-          </text>
+          <svg x="-3" y="-3" width="6" height="6" viewBox="0 0 16 16"><PixelArt name="hero" size={16} /></svg>
         </g>
       </svg>
 
@@ -103,7 +103,7 @@ export function WorldPage() {
         <ul className="list">
           {world.bosses.map((b) => (
             <li key={b.boss.id} style={{ opacity: b.status === 'locked' ? 0.55 : 1 }}>
-              <div className="icon-lg">{b.status === 'locked' ? '❔' : b.boss.icon}</div>
+              <div className="icon-lg"><PixelArt name={b.status === 'locked' ? 'unknown' : BOSS_ART[b.boss.id]} size={40} /></div>
               <div className="grow">
                 <div className="row between">
                   <span className="pixel tiny">{b.status === 'locked' ? '???' : b.boss.name}</span>

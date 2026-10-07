@@ -4,13 +4,15 @@ import { runSession } from '../tracking/runSession';
 import { useRunSession, useTicker } from '../tracking/useRunSession';
 import { formatDistance, formatDuration } from '../lib/format';
 import { useGame } from '../state/GameContext';
+import { PixelArt } from './PixelArt';
+import type { SpriteId } from '../art/sprites';
 
-const NAV = [
-  { to: '/', icon: '🧙', label: 'Hero', end: true },
-  { to: '/world', icon: '🗺️', label: 'World' },
-  { to: '/run', icon: '🏃', label: 'Run', run: true },
-  { to: '/training', icon: '📜', label: 'Plan' },
-  { to: '/runs', icon: '📖', label: 'Log' },
+const NAV: { to: string; icon: SpriteId; label: string; end?: boolean; run?: boolean }[] = [
+  { to: '/', icon: 'hero', label: 'Hero', end: true },
+  { to: '/world', icon: 'map', label: 'World' },
+  { to: '/run', icon: 'run', label: 'Run', run: true },
+  { to: '/training', icon: 'plan', label: 'Plan' },
+  { to: '/runs', icon: 'log', label: 'Log' },
 ];
 
 export function Layout() {
@@ -61,7 +63,7 @@ export function Layout() {
         <div className="nav-inner">
           {NAV.map((n) => (
             <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => `${isActive ? 'active' : ''}${n.run ? ' run-btn' : ''}`}>
-              <span className="ico" aria-hidden="true">{n.icon}</span>
+              <span className="ico" aria-hidden="true"><PixelArt name={n.icon} size={32} /></span>
               {n.label}
             </NavLink>
           ))}

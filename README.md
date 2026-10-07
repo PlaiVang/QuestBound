@@ -5,6 +5,7 @@ A running app that turns your training into a fantasy RPG. Track runs with live 
 ## Features
 
 Outdoor GPS runs show lightweight route-outline thumbnails in the Adventure Log, with no map-tile downloads. Pauses and signal gaps stay disconnected; manual runs and runs without usable route data keep a workout icon. Open a run for the full map and replay.
+The original starter pixel-art pack lives in `src/art/sprites.ts`: four hero classes, an adventurer, eight bosses, five navigation sprites, coin, chest, and a mystery icon. SVG pixels render consistently offline across devices; dashboard, class chips, log placeholders, navigation, and boss encounters use them. Scenery and some secondary utility/reward icons remain emoji placeholders for later art passes.
 Run-detail splits follow Settings units: full kilometers or full miles. GPS mile splits are recalculated from recorded route points; manual splits are estimated at even pace. Saved kilometer splits remain unchanged for backup compatibility.
 
 Android SQLite is configured without encryption, matching the existing database connection. If startup reports `CapacitorSQLitePlugin: null`, rebuild, sync, and install the updated app over the existing installation; do not clear app data or uninstall to troubleshoot, as that removes local runs.

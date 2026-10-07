@@ -110,7 +110,7 @@ export function ManualRunPage() {
             </button>
             {CLASS_IDS.map((id) => (
               <button type="button" key={id} aria-pressed={cls === id} className={cls === id ? 'on' : ''} onClick={() => setCls(id)}>
-                {CLASSES[id].icon} {CLASSES[id].name}
+                <PixelArt name={id} /> {CLASSES[id].name}
               </button>
             ))}
           </div>
@@ -127,3 +127,4 @@ export function ManualRunPage() {
     </form>
   );
 }
+import { PixelArt } from '../components/PixelArt';

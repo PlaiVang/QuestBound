@@ -1,6 +1,4 @@
 import { Link } from 'react-router-dom';
-import { CLASSES } from '../game/classes';
-import { runClass } from '../game/types';
 import { formatDate, formatDistance, formatDuration, formatPace } from '../lib/format';
 import { startOfWeek } from '../lib/dates';
 import { useGame } from '../state/GameContext';
@@ -53,11 +51,10 @@ export function HistoryPage() {
           </div>
           <div className="list history-runs">
             {list.map((r) => {
-              const cls = CLASSES[runClass(r)];
               const res = game.runResults[r.id];
               return (
                 <Link key={r.id} to={`/runs/${r.id}`}>
-                  <RunRouteThumbnail run={r} icon={cls.icon} />
+                  <RunRouteThumbnail run={r} />
                   <div className="history-run-details">
                     <div className="history-run-metrics">
                       <strong>{formatDistance(r.distanceM, profile.units)}</strong>

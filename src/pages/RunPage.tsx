@@ -160,7 +160,7 @@ export function RunPage() {
             </button>
             {CLASS_IDS.map((id) => (
               <button key={id} aria-pressed={chosen === id} className={chosen === id ? 'on' : ''} onClick={() => pickClass(id)}>
-                {CLASSES[id].icon} {CLASSES[id].name}
+                <PixelArt name={id} /> {CLASSES[id].name}
               </button>
             ))}
           </div>
@@ -211,7 +211,7 @@ export function RunPage() {
       <RouteMap points={session.points} follow />
       {chosen !== 'auto' && (
         <p className="small center">
-          Running as {CLASSES[chosen].icon} {CLASSES[chosen].name}
+          Running as <PixelArt name={chosen} /> {CLASSES[chosen].name}
         </p>
       )}
 
@@ -282,3 +282,4 @@ export function RunPage() {
     </>
   );
 }
+import { PixelArt } from '../components/PixelArt';
