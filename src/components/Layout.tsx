@@ -41,12 +41,12 @@ export function Layout() {
         main.current?.focus();
       }}>Skip to main content</a>
       <main className="app" id="main-content" tabIndex={-1} ref={main}>
-        <div className="utility-nav">
-          <Link to="/stats">Stats</Link>
-          <Link to="/quests">Quests</Link>
-          <Link to="/rewards">Shop</Link>
-          <Link to="/settings">Settings</Link>
-        </div>
+        <nav className="utility-nav" aria-label="Secondary navigation">
+          <NavLink to="/stats">Stats</NavLink>
+          <NavLink to="/quests">Quests</NavLink>
+          <NavLink to="/rewards">Shop</NavLink>
+          <NavLink to="/settings">Settings</NavLink>
+        </nav>
         {active && location.pathname !== '/run' && (
           <Link to="/run" className="run-banner">
             <span>{session.status === 'paused' ? '⏸ Run paused' : '🏃 Run in progress'}</span>

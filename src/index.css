@@ -703,13 +703,31 @@ select:focus-visible {
 }
 .skip-link:focus { top: 12px; }
 .utility-nav {
-  display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 4px 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
   margin-bottom: 16px;
 }
-.utility-nav a { padding: 12px 0; font-size: 0.875rem; }
+.utility-nav a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 4px;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: var(--bg-2);
+  color: var(--text);
+  font-family: var(--pixel);
+  font-size: 0.5rem;
+  line-height: 1.5;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.utility-nav a.active { background: var(--panel-2); color: var(--gold); border-color: var(--gold); }
+@media (hover: hover) {
+  .utility-nav a:hover { background: var(--panel-2); text-decoration: none; }
+}
 .btn, .segmented button, .nav a, input:not([type='checkbox']), select {
   min-height: 44px;
 }
