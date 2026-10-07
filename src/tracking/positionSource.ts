@@ -15,15 +15,13 @@ class NativeSource implements PositionSource {
   async start(onFix: (fix: RawFix) => void, onError: (message: string) => void) {
     try {
       const { LocalNotifications } = await import('@capacitor/local-notifications');
-      await LocalNotifications.requestPermissions();
-    } catch {
-      // The tracking notification is optional; tracking still works without it.
-    }
-    try {
-      const { KeepAwake } = await import('@capacitor-community/keep-awake');
-      await KeepAwake.keepAwake();
-    } catch {
-      // Not critical.
+      const permission = await LocalNotifications.requestPermissions();
+      if (permission.display !== 'granted') {
+        onError('Notifications are disabled. Android may hide the tracking notification; enable notifications in app settings.');
+      }
+    } catch (e) {
+      console.warn('Could not request notification permission', e);
+      onError('Could not request notification permission. Check app permissions; the tracking notification may be hidden.');
     }
     this.watcherId = await BackgroundGeolocation.addWatcher(
       {
@@ -36,8 +34,7 @@ class NativeSource implements PositionSource {
       (location, error) => {
         if (error) {
           if (error.code === 'NOT_AUTHORIZED') {
-            onError('Location permission is required to track runs. Opening settings…');
-            void BackgroundGeolocation.openSettings();
+            onError('Location permission is required. Allow precise location in Android Settings, then restart this run.');
           } else {
             onError(error.message);
           }
@@ -59,12 +56,6 @@ class NativeSource implements PositionSource {
   async stop() {
     if (this.watcherId) await BackgroundGeolocation.removeWatcher({ id: this.watcherId });
     this.watcherId = null;
-    try {
-      const { KeepAwake } = await import('@capacitor-community/keep-awake');
-      await KeepAwake.allowSleep();
-    } catch {
-      // Not critical.
-    }
   }
 }
 

@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useLocation, Link } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
 import { runSession } from '../tracking/runSession';
 import { useRunSession, useTicker } from '../tracking/useRunSession';
 import { formatDistance, formatDuration } from '../lib/format';
@@ -16,12 +17,27 @@ export function Layout() {
   const session = useRunSession();
   const { profile } = useGame();
   const location = useLocation();
+  const main = useRef<HTMLElement>(null);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    main.current?.focus({ preventScroll: true });
+  }, [location.pathname]);
   const active = session.status !== 'idle';
   useTicker(active && location.pathname !== '/run');
 
   return (
     <>
-      <main className="app">
+      <a className="skip-link" href="#main-content" onClick={event => {
+        event.preventDefault();
+        main.current?.focus();
+      }}>Skip to main content</a>
+      <main className="app" id="main-content" tabIndex={-1} ref={main}>
+        <div className="utility-nav">
+          <Link to="/stats">Stats</Link>
+          <Link to="/quests">Quests</Link>
+          <Link to="/rewards">Shop</Link>
+          <Link to="/settings">Settings</Link>
+        </div>
         {active && location.pathname !== '/run' && (
           <Link to="/run" className="run-banner">
             <span>{session.status === 'paused' ? '⏸ Run paused' : '🏃 Run in progress'}</span>
@@ -32,11 +48,11 @@ export function Layout() {
         )}
         <Outlet />
       </main>
-      <nav className="nav">
+      <nav className="nav" aria-label="Primary navigation">
         <div className="nav-inner">
           {NAV.map((n) => (
             <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => `${isActive ? 'active' : ''}${n.run ? ' run-btn' : ''}`}>
-              <span className="ico">{n.icon}</span>
+              <span className="ico" aria-hidden="true">{n.icon}</span>
               {n.label}
             </NavLink>
           ))}

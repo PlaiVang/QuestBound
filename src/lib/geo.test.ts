@@ -21,6 +21,22 @@ function straightTrack(totalM: number, secPerKm: number, stepM = 10, start = 0):
 }
 
 describe('geo', () => {
+  it('rejects malformed fixes and stale fixes after a pause', () => {
+    const acc = new TrackAccumulator();
+    expect(acc.add({ latitude: NaN, longitude: 0, accuracy: 5, altitude: null, time: 0 })).toBe('invalid');
+    acc.add({ latitude: 0, longitude: 0, accuracy: 5, altitude: null, time: 1000 });
+    acc.newSegment();
+    expect(acc.add({ latitude: 0, longitude: 0, accuracy: 5, altitude: null, time: 500 })).toBe('stale');
+  });
+  it('does not invent distance or moving time across a GPS outage', () => {
+    const acc = new TrackAccumulator();
+    acc.add({ latitude: 0, longitude: 0, accuracy: 5, altitude: null, time: 0 });
+    acc.add({ latitude: 0.001, longitude: 0, accuracy: 5, altitude: null, time: 60000 });
+    expect(acc.distanceM).toBe(0);
+    expect(acc.points[1][4]).toBe(1);
+    acc.add({ latitude: 0.0011, longitude: 0, accuracy: 5, altitude: null, time: 65000 });
+    expect(acc.distanceM).toBeCloseTo(11.1, 0);
+  });
   it('computes haversine distance', () => {
     expect(haversine(0, 0, 0, 1)).toBeCloseTo(111195, -2);
   });
@@ -49,6 +65,7 @@ describe('geo', () => {
     const a = straightTrack(1000, 300);
     const b = straightTrack(1000, 300, 10, 10_000_000).map((p): TrackPoint => [p[0] + 0.05, 0, p[2], null, 1]);
     expect(trackDistance([...a, ...b])).toBeCloseTo(2000, -1);
+    expect(bestEffort([...a, ...b], 1500)).toBeUndefined();
   });
 
   it('filters inaccurate, jittery and impossible fixes', () => {

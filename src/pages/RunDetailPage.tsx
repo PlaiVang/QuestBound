@@ -132,7 +132,7 @@ export function RunDetailPage() {
         </p>
         <div className="segmented">
           {CLASS_IDS.map((c) => (
-            <button key={c} className={cls === c ? 'on' : ''} onClick={() => setClass(c)}>
+            <button key={c} aria-pressed={cls === c} className={cls === c ? 'on' : ''} onClick={() => setClass(c)}>
               {CLASSES[c].icon} {CLASSES[c].name}
             </button>
           ))}

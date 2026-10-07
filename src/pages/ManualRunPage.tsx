@@ -105,11 +105,11 @@ export function ManualRunPage() {
             <span>Class</span>
           </label>
           <div className="segmented">
-            <button type="button" className={cls === 'auto' ? 'on' : ''} onClick={() => setCls('auto')}>
+            <button type="button" aria-pressed={cls === 'auto'} className={cls === 'auto' ? 'on' : ''} onClick={() => setCls('auto')}>
               ✨ Auto
             </button>
             {CLASS_IDS.map((id) => (
-              <button type="button" key={id} className={cls === id ? 'on' : ''} onClick={() => setCls(id)}>
+              <button type="button" key={id} aria-pressed={cls === id} className={cls === id ? 'on' : ''} onClick={() => setCls(id)}>
                 {CLASSES[id].icon} {CLASSES[id].name}
               </button>
             ))}
@@ -120,7 +120,7 @@ export function ManualRunPage() {
           <textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Treadmill, intervals, how it felt…" />
         </label>
       </section>
-      {error && <div className="toast">{error}</div>}
+      {error && <div className="toast" role="alert">{error}</div>}
       <button className="btn primary big block" type="submit" disabled={busy}>
         {busy ? 'Saving...' : '✓ Save run'}
       </button>

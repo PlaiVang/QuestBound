@@ -17,6 +17,14 @@ A running app that turns your training into a fantasy RPG. Track runs with live 
 
 **Scope:** the original distance/pace-based Realm, XP, quests, and streak mechanics remain a labeled prototype. They do not decide whether a planned workout is complete. Dungeon combat, card packs, loadouts, and party systems are deferred until the game rules are settled.
 
+### GPS limitations and field checks
+
+Android tracking uses a location foreground service, not a permanently illuminated screen. Browser tracking is foreground-only in practice and is not a substitute for native background tracking.
+
+The current filter rejects malformed coordinates, reported accuracy worse than 25 meters, stale timestamps, movements below 3 meters, and speeds above 9 m/s. Gaps longer than 30 seconds start a new route segment: missing travel is not guessed, so poor reception can undercount distance. New GPS best efforts require a continuous segment and cannot bridge pauses or outages. Existing saved effort values are not retroactively recalculated. This is a basic heuristic filter, not validated parity with Strava or Runna. Elevation is GPS-derived and noisy; manual best efforts are even-pace estimates.
+
+Before relying on it for training metrics, compare several measured routes against a reference watch or another app: open sky, trees/buildings, stationary periods, pause/resume, and at least 30 minutes with the screen locked. Record total distance, missing route sections, elapsed time, and battery use. Device power management, permissions, and satellite reception affect results. Offline tracking does not require map tiles, but basemap display requires internet.
+
 **Training**
 - Live GPS run tracking with pause/resume. It keeps tracking with the screen off (Android foreground service) and recovers the run if the app crashes.
 - Manual run logging for treadmill or watch runs.

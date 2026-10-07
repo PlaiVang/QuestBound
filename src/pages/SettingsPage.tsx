@@ -9,11 +9,24 @@ import { useGame } from '../state/GameContext';
 
 export function SettingsPage() {
   const { profile, saveProfile, reload } = useGame();
-  const [name, setName] = useState(profile.heroName);
+  const [name, setName] = useState<string | null>(null);
   const [status, setStatus] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
 
-  const setUnits = (units: Units) => saveProfile({ ...profile, units });
+  const persistProfile = async (heroName: string, units: Units) => {
+    setBusy(true);
+    try {
+      await saveProfile({ heroName, units });
+      setName(null);
+      setStatus('Settings saved.');
+    } catch (e) {
+      setStatus(`Settings could not be saved: ${e instanceof Error ? e.message : 'Try again.'}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const setUnits = (units: Units) => persistProfile(profile.heroName, units);
 
   const exportData = async () => {
     try {
@@ -41,6 +54,7 @@ export function SettingsPage() {
     try {
       await db.importBackup(JSON.parse(await file.text()));
       await reload();
+      setName(null);
       setStatus('Backup restored.');
     } catch (e) {
       setStatus(`Import failed: ${(e as Error).message}`);
@@ -55,15 +69,20 @@ export function SettingsPage() {
         <div>
           <label className="field">
             <span>Hero name</span>
-            <input value={name} maxLength={24} onChange={(e) => setName(e.target.value)} onBlur={() => name.trim() && saveProfile({ ...profile, heroName: name.trim() })} />
+            <input name="hero-name" autoComplete="off" value={name ?? profile.heroName} maxLength={24} onChange={(e) => setName(e.target.value)} />
           </label>
+          <button className="btn" disabled={busy} onClick={() => {
+            const heroName = (name ?? profile.heroName).trim();
+            if (!heroName) { setStatus('Enter a hero name before saving.'); return; }
+            void persistProfile(heroName, profile.units);
+          }}>{busy ? 'Saving…' : 'Save hero name'}</button>
           <div>
             <div className="small muted" style={{ marginBottom: 6 }}>
               Units
             </div>
             <div className="segmented">
               {(['km', 'mi'] as Units[]).map((u) => (
-                <button key={u} className={profile.units === u ? 'on' : ''} onClick={() => setUnits(u)}>
+                <button key={u} aria-pressed={profile.units === u} disabled={busy} className={profile.units === u ? 'on' : ''} onClick={() => setUnits(u)}>
                   {u === 'km' ? 'Kilometers' : 'Miles'}
                 </button>
               ))}
@@ -86,6 +105,7 @@ export function SettingsPage() {
         <input
           ref={fileRef}
           type="file"
+          aria-label="Import QuestBound backup"
           accept="application/json,.json"
           hidden
           onChange={(e) => {
@@ -94,7 +114,7 @@ export function SettingsPage() {
             if (f) importData(f);
           }}
         />
-        {status && <p className="small">{status}</p>}
+        {status && <p className="small" role="status">{status}</p>}
       </section>
 
       <section className="panel small">

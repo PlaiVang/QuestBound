@@ -5,9 +5,13 @@ import type { ClassId } from '../game/types';
 export function Bar({ value, max, color, label }: { value: number; max: number; color?: string; label?: ReactNode }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
   return (
-    <div className="bar">
-      <div className="fill" style={{ width: `${pct}%`, background: color }} />
-      {label !== undefined && <div className="label">{label}</div>}
+    <div className="progress">
+      <div className="bar" role={typeof label === 'string' ? 'progressbar' : undefined}
+        aria-label={typeof label === 'string' ? label : undefined}
+        aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
+        <div className="fill" style={{ transform: `scaleX(${pct / 100})`, background: color }} />
+      </div>
+      {label !== undefined && <div className="progress-label">{label}</div>}
     </div>
   );
 }

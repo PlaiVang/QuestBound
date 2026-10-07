@@ -20,9 +20,9 @@ function FitBounds({ points, follow }: { points: TrackPoint[]; follow: boolean }
     if (!points.length) return;
     if (follow) {
       const p = points[points.length - 1];
-      map.setView([p[0], p[1]], Math.max(map.getZoom(), 16), { animate: true });
+      map.setView([p[0], p[1]], Math.max(map.getZoom(), 16), { animate: false });
     } else if (!fitted.current) {
-      map.fitBounds(points.map((p) => [p[0], p[1]] as LatLngTuple), { padding: [24, 24] });
+      map.fitBounds(points.map((p) => [p[0], p[1]] as LatLngTuple), { padding: [24, 24], maxZoom: 17 });
       fitted.current = true;
     }
   }, [points, follow, map]);
@@ -46,9 +46,12 @@ export function RouteMap({ points, follow = false, markerIndex, tall }: Props) {
   const start = points[0];
   const end = !follow && points.length > 1 ? points[points.length - 1] : undefined;
 
+  if (!points.length) return <div className={`map map-empty${tall ? ' tall' : ''}`} role="status">
+    <p>No usable GPS position yet.</p><p className="small muted">Move outdoors with a clear view of the sky. Your workout timer still works.</p>
+  </div>;
   return (
     <div className={`map${tall ? ' tall' : ''}`}>
-      <MapContainer center={center} zoom={15} style={{ height: '100%', width: '100%' }} zoomControl={false} attributionControl>
+      <MapContainer center={center} zoom={15} style={{ height: '100%', width: '100%' }} zoomControl={!follow} attributionControl>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

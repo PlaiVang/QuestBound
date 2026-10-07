@@ -128,7 +128,8 @@ export function RunPage() {
   };
 
   const movingSec = runSession.movingMs() / 1000;
-  const cur = currentPace(session.points);
+  const lastPoint = session.points.at(-1);
+  const cur = lastPoint && Date.now() - lastPoint[2] <= 15000 ? currentPace(session.points) : { meters: 0, seconds: 0 };
 
   if (!active) {
     return (
@@ -153,11 +154,11 @@ export function RunPage() {
             Pick the class that fits today's workout, or let QuestBound decide from your pace and distance. You can change it after the run.
           </p>
           <div className="segmented" style={{ marginBottom: 10 }}>
-            <button className={chosen === 'auto' ? 'on' : ''} onClick={() => pickClass('auto')}>
+            <button aria-pressed={chosen === 'auto'} className={chosen === 'auto' ? 'on' : ''} onClick={() => pickClass('auto')}>
               ✨ Auto
             </button>
             {CLASS_IDS.map((id) => (
-              <button key={id} className={chosen === id ? 'on' : ''} onClick={() => pickClass(id)}>
+              <button key={id} aria-pressed={chosen === id} className={chosen === id ? 'on' : ''} onClick={() => pickClass(id)}>
                 {CLASSES[id].icon} {CLASSES[id].name}
               </button>
             ))}
@@ -172,7 +173,7 @@ export function RunPage() {
             )}
           </p>
         </section>
-        {session.error && <div className="toast">{session.error}</div>}
+        {session.error && <div className="toast" role="alert">{session.error}</div>}
         {saveError && <div className="toast" role="alert">{saveError}</div>}
         <button className="btn primary big block" onClick={start} disabled={busy}>
           ▶ Start run
@@ -193,7 +194,11 @@ export function RunPage() {
   return (
     <>
       <SignalIndicator accuracy={session.lastAccuracy} lastFixAt={session.lastFixAt} />
-      {session.error && <div className="toast">{session.error}</div>}
+      {session.error && <div className="toast" role="alert">{session.error}</div>}
+      {session.status === 'running' && (!lastPoint || Date.now() - lastPoint[2] > 15000) && <p className="small muted" role="status">
+        Distance is waiting for usable GPS. Your workout clock continues; missing route sections will not be guessed.
+      </p>}
+      <h1 className="small center">{session.status === 'paused' ? 'Run paused' : 'Run in progress'}</h1>
       {saveError && <div className="toast" role="alert">{saveError}</div>}
       {workout && <WorkoutGuide key={workout.id} workout={workout} elapsedSec={movingSec} running={session.status === 'running'} />}
       <div className="big-number">{formatDuration(movingSec)}</div>

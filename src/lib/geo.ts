@@ -25,9 +25,10 @@ export const GPS_RULES = {
   maxAccuracyM: 25,
   minMoveM: 3,
   maxSpeedMps: 9,
+  maxGapMs: 30000,
 };
 
-export type FixVerdict = 'accepted' | 'inaccurate' | 'jitter' | 'jump' | 'stale';
+export type FixVerdict = 'accepted' | 'invalid' | 'inaccurate' | 'jitter' | 'jump' | 'stale';
 
 /**
  * Accumulates filtered GPS fixes into a track. Each pause starts a new segment so
@@ -45,8 +46,16 @@ export class TrackAccumulator {
   }
 
   add(fix: RawFix): FixVerdict {
+    if (!Number.isFinite(fix.latitude) || Math.abs(fix.latitude) > 90 ||
+        !Number.isFinite(fix.longitude) || Math.abs(fix.longitude) > 180 ||
+        !Number.isFinite(fix.accuracy) || fix.accuracy < 0 || !Number.isFinite(fix.time) ||
+        (fix.altitude !== null && !Number.isFinite(fix.altitude))) return 'invalid';
     if (fix.accuracy > GPS_RULES.maxAccuracyM) return 'inaccurate';
     const last = this.points[this.points.length - 1];
+    if (last && fix.time <= last[2]) return 'stale';
+    // A missing signal cannot prove the path traveled; don't draw a shortcut
+    // or count its straight-line distance through the gap.
+    if (this.segmentOpen && last && fix.time - last[2] > GPS_RULES.maxGapMs) this.newSegment();
     if (this.segmentOpen && last) {
       if (fix.time <= last[2]) return 'stale';
       const d = haversine(last[0], last[1], fix.latitude, fix.longitude);
@@ -127,6 +136,10 @@ export function bestEffort(points: TrackPoint[], meters: number): number | undef
   let best = Infinity;
   let i = 0;
   for (let j = 1; j < dist.length; j++) {
+    if (points[j][4] !== points[j - 1][4]) {
+      i = j;
+      continue;
+    }
     while (i < j && dist[j] - dist[i + 1] >= meters) i++;
     const covered = dist[j] - dist[i];
     if (covered >= meters && covered > 0) {

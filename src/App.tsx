@@ -1,17 +1,19 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { Layout } from './components/Layout';
 import { DashboardPage } from './pages/DashboardPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { ManualRunPage } from './pages/ManualRunPage';
 import { QuestsPage } from './pages/QuestsPage';
 import { RewardsPage } from './pages/RewardsPage';
-import { RunDetailPage } from './pages/RunDetailPage';
-import { RunPage } from './pages/RunPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { StatsPage } from './pages/StatsPage';
 import { WorldPage } from './pages/WorldPage';
 import { TrainingPage } from './pages/TrainingPage';
 import { GameProvider, useGame } from './state/GameContext';
+
+const RunPage = lazy(() => import('./pages/RunPage').then(m => ({ default: m.RunPage })));
+const RunDetailPage = lazy(() => import('./pages/RunDetailPage').then(m => ({ default: m.RunDetailPage })));
+const StatsPage = lazy(() => import('./pages/StatsPage').then(m => ({ default: m.StatsPage })));
 
 function Routed() {
   const { ready, error } = useGame();
@@ -32,7 +34,7 @@ function Routed() {
     </section></div>
   );
   return (
-    <Routes>
+    <Suspense fallback={<div className="app" role="status">Loading screen…</div>}><Routes>
       <Route element={<Layout />}>
         <Route index element={<DashboardPage />} />
         <Route path="run" element={<RunPage />} />
@@ -47,7 +49,7 @@ function Routed() {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
-    </Routes>
+    </Routes></Suspense>
   );
 }
 
