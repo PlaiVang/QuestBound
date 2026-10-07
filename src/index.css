@@ -444,6 +444,12 @@ label.field > span {
 .pixel-art { display: inline-block; vertical-align: middle; flex-shrink: 0; image-rendering: pixelated; }
 .chip .pixel-art { width: 20px; height: 20px; }
 
+.run-chart { margin-top: 24px; min-width: 0; }
+.lap-table-scroll { overflow-x: auto; }
+.lap-table { width: 100%; font-size: 0.875rem; text-align: left; }
+.lap-table th, .lap-table td { padding: 10px 4px; white-space: nowrap; }
+.lap-table thead { color: var(--muted); }
+
 .big-number {
   font-family: var(--pixel);
   font-size: 2rem;

@@ -2,9 +2,12 @@ import { Link } from 'react-router-dom';
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { CLASSES, CLASS_IDS } from '../game/classes';
 import { runClass } from '../game/types';
-import { addDays, startOfWeek, weekKey } from '../lib/dates';
+import { addDays, dayKey, startOfWeek, weekKey } from '../lib/dates';
 import { formatDistance, formatDuration, unitMeters } from '../lib/format';
 import { useGame } from '../state/GameContext';
+import { trainingWeeks } from '../lib/analytics';
+import { useState } from 'react';
+import { workoutProgress } from '../training/plans';
 
 const tooltipStyle = {
   contentStyle: { background: '#261c36', border: '2px solid #0d0914', borderRadius: 4 },
@@ -12,9 +15,19 @@ const tooltipStyle = {
 };
 
 export function StatsPage() {
-  const { runs, game, profile } = useGame();
+  const { runs, game, profile, trainingPlan } = useGame();
+  const [now] = useState(Date.now);
   const u = unitMeters(profile.units);
-  const thisWeek = startOfWeek(Date.now());
+  const thisWeek = startOfWeek(now);
+  const training = trainingWeeks(runs, now).map(w => ({ ...w,
+    week: new Date(w.start).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+    minutes: Math.round(w.seconds / 60) }));
+  const current = training[training.length - 1];
+  const previous = training[training.length - 2];
+  const due = trainingPlan?.sessions.filter(s => !s.skipped && s.date <= dayKey(now)) ?? [];
+  const completed = due.filter(s => workoutProgress(s, runs).status === 'completed').length;
+  const recentMonth = runs.filter(r => r.startedAt >= addDays(now, -30) && r.startedAt <= now);
+  const previousMonth = runs.filter(r => r.startedAt >= addDays(now, -60) && r.startedAt < addDays(now, -30));
 
   const weekly = Array.from({ length: 12 }, (_, i) => {
     const w = addDays(thisWeek, -7 * (11 - i));
@@ -47,6 +60,29 @@ export function StatsPage() {
   return (
     <>
       <h1>Hall of records</h1>
+      <section className="panel">
+        <h2>Training trends</h2>
+        <p className="small">This week: {current.runs} runs · {formatDuration(current.seconds)} · {formatDistance(current.distanceM, profile.units, 1)}</p>
+        <p className="small muted">Previous week: {previous.runs} runs · {formatDuration(previous.seconds)} · {formatDistance(previous.distanceM, profile.units, 1)}</p>
+        <p className="small">Last 30 days: {recentMonth.length} runs · {formatDistance(recentMonth.reduce((s, r) => s + r.distanceM, 0), profile.units, 1)}</p>
+        <p className="small muted">Prior 30 days: {previousMonth.length} runs · {formatDistance(previousMonth.reduce((s, r) => s + r.distanceM, 0), profile.units, 1)}</p>
+        {trainingPlan && <p className="small">Current plan: {completed} / {due.length} due sessions completed. Partial attempts stay in your journal.</p>}
+        <h3>Weekly training time (minutes)</h3>
+        <ResponsiveContainer width="100%" height={180}>
+          <BarChart data={training} margin={{ left: -20, right: 5 }}>
+            <CartesianGrid stroke="#3a2d52" vertical={false} /><XAxis dataKey="week" interval={2} /><YAxis />
+            <Tooltip {...tooltipStyle} /><Bar dataKey="minutes" fill="#ff8a3d" isAnimationActive={false} />
+          </BarChart>
+        </ResponsiveContainer>
+        <h3>Completed planned sessions</h3>
+        <ResponsiveContainer width="100%" height={160}>
+          <BarChart data={training} margin={{ left: -20, right: 5 }}>
+            <XAxis dataKey="week" interval={2} /><YAxis allowDecimals={false} />
+            <Tooltip {...tooltipStyle} /><Bar dataKey="completed" fill="#66bb6a" isAnimationActive={false} />
+          </BarChart>
+        </ResponsiveContainer>
+        <p className="tiny muted">Current week is still in progress. Trends describe your logs, not a recommendation to increase training.</p>
+      </section>
       <section className="panel">
         <h2>Personal records</h2>
         {game.prs.length === 0 && <p className="small muted">Run to set your first records.</p>}

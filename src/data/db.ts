@@ -1,6 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import type { Profile, Redemption, Reward, Run, TrackPoint } from '../game/types';
 import { validatePlan, type TrainingPlan } from '../training/plans';
+import { validateHeartRate } from '../lib/heartRate';
 
 export interface Backup {
   app: 'questbound';
@@ -139,6 +140,7 @@ export const db = {
   init: () => driver.init(),
   runs: () => driver.allRuns(),
   saveRun: async (run: Run, points?: TrackPoint[]) => {
+    if (run.heartRate !== undefined) validateHeartRate(run.heartRate);
     await driver.putRun(run);
     if (points?.length) await driver.putPoints(run.id, points);
   },
@@ -187,6 +189,7 @@ export const db = {
       throw new Error('This file is not a QuestBound backup.');
     }
     // Validate the optional extension before replacing any existing data.
+    for (const run of b.runs) if (run?.heartRate !== undefined) validateHeartRate(run.heartRate);
     if (b.trainingPlan != null) validatePlan(b.trainingPlan);
     const classes = ['ranger', 'rogue', 'paladin', 'berserker'];
     if (b.runs.some(r => !r || typeof r.id !== 'string' || !r.id || !Number.isFinite(r.startedAt) ||

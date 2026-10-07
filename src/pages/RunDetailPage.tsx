@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { RouteReplay } from '../components/RouteMap';
 import { Bar, ClassChip, Stat } from '../components/ui';
 import { db } from '../data/db';
 import { CLASSES, CLASS_IDS } from '../game/classes';
 import { reportForRun } from '../game/engine';
 import { runClass, type ClassId, type TrackPoint } from '../game/types';
 import { BOSSES } from '../game/world';
-import { formatDateTime, formatDistance, formatDuration, formatPace, unitMeters } from '../lib/format';
-import { computeSplits, evenPaceSplits } from '../lib/geo';
+import { formatDateTime } from '../lib/format';
+import { RunAnalysis } from '../components/RunAnalysis';
 import { useGame } from '../state/GameContext';
 import { workoutProgress } from '../training/plans';
 import { PixelArt } from '../components/PixelArt';
 import { BOSS_ART } from '../art/sprites';
+import { HeartRateMetrics } from '../components/HeartRateMetrics';
 
 export function RunDetailPage() {
   const { id = '' } = useParams();
@@ -20,12 +20,17 @@ export function RunDetailPage() {
   const navigate = useNavigate();
   const { runs, game, profile, redemptions, saveRun, deleteRun, trainingPlan } = useGame();
   const run = runs.find((r) => r.id === id);
-  const [points, setPoints] = useState<TrackPoint[] | null>(null);
+  const [route, setRoute] = useState<{ id: string; points: TrackPoint[]; error: string } | null>(null);
+  const points = route?.id === id ? route.points : null;
+  const routeError = route?.id === id ? route.error : '';
   const [confirmDelete, setConfirmDelete] = useState(false);
   const isNew = params.get('new') === '1';
 
   useEffect(() => {
-    void db.points(id).then(setPoints);
+    let cancelled = false;
+    void db.points(id).then(points => { if (!cancelled) setRoute({ id, points, error: '' }); })
+      .catch(e => { if (!cancelled) setRoute({ id, points: [], error: e instanceof Error ? e.message : 'Unable to load route.' }); });
+    return () => { cancelled = true; };
   }, [id]);
 
   const report = useMemo(() => (isNew && run ? reportForRun(runs, id, redemptions) : null), [isNew, run, runs, id, redemptions]);
@@ -43,12 +48,6 @@ export function RunDetailPage() {
 
   const res = game.runResults[run.id];
   const cls = runClass(run);
-  const splits = run.source === 'manual'
-    ? evenPaceSplits(run.distanceM, run.durationSec, unitMeters(profile.units))
-    : profile.units === 'km' ? run.splits
-      : points ? computeSplits(points, unitMeters(profile.units)) : [];
-  const maxSplit = Math.max(...splits, 1);
-  const minSplit = Math.min(...splits);
   const attemptBoss = res?.bossAttempt ? BOSSES.find((b) => b.id === res.bossAttempt!.bossId) : undefined;
 
   const setClass = async (c: ClassId) => {
@@ -123,11 +122,9 @@ export function RunDetailPage() {
       )}
 
       <h1>{formatDateTime(run.startedAt)}</h1>
-      <div className="grid-3" style={{ marginBottom: 14 }}>
-        <Stat label="Distance" value={formatDistance(run.distanceM, profile.units)} />
-        <Stat label="Time" value={formatDuration(run.durationSec)} />
-        <Stat label="Pace" value={formatPace(run.distanceM, run.durationSec, profile.units).replace(/ \/.*/, '')} />
-      </div>
+      {routeError && <p role="alert" className="small">{routeError} Reopen this run to retry.</p>}
+      <RunAnalysis key={run.id} run={run} points={points} units={profile.units} />
+      <HeartRateMetrics key={`heart:${run.id}`} run={run} />
 
       <section className="panel">
         <div className="row between">
@@ -183,42 +180,6 @@ export function RunDetailPage() {
               <span>{res.mapKm.toFixed(2)} km</span>
             </li>
           </ul>
-        </section>
-      )}
-
-      {splits.length > 0 && (
-        <section className="panel">
-          <h2>Splits{run.source === 'manual' && ' (estimated)'}</h2>
-          <table className="splits">
-            <tbody>
-              {splits.map((s, i) => (
-                <tr key={i}>
-                  <td style={{ width: 50 }}>{profile.units} {i + 1}</td>
-                  <td style={{ width: 60 }}>{formatDuration(s)}</td>
-                  <td>
-                    <div
-                      className="split-bar"
-                      style={{ width: `${(s / maxSplit) * 100}%`, background: s === minSplit && splits.length > 1 ? 'var(--gold)' : undefined }}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-      )}
-
-      {run.source === 'gps' && profile.units === 'mi' && points?.length === 0 && run.distanceM >= unitMeters('mi') && (
-        <section className="panel">
-          <h2>Splits</h2>
-          <p className="small muted">Mile splits need the recorded GPS route, which is unavailable for this run.</p>
-        </section>
-      )}
-
-      {run.source === 'gps' && (
-        <section className="panel">
-          <h2>Route replay</h2>
-          {points ? <RouteReplay points={points} /> : <p className="small muted">Loading route…</p>}
         </section>
       )}
 
