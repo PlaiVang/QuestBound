@@ -110,11 +110,12 @@ export function cumulative(points: TrackPoint[]) {
   return { dist, time };
 }
 
-/** Seconds per full kilometer, interpolated at each km boundary. */
-export function computeSplits(points: TrackPoint[]): number[] {
+/** Seconds per full split, interpolated at each distance boundary. */
+export function computeSplits(points: TrackPoint[], splitMeters = 1000): number[] {
+  if (!Number.isFinite(splitMeters) || splitMeters <= 0) throw new RangeError('Split distance must be positive and finite.');
   const { dist, time } = cumulative(points);
   const splits: number[] = [];
-  let nextKm = 1000;
+  let nextKm = splitMeters;
   let lastBoundaryTime = 0;
   for (let i = 1; i < dist.length; i++) {
     while (dist[i] >= nextKm) {
@@ -123,7 +124,7 @@ export function computeSplits(points: TrackPoint[]): number[] {
       const at = time[i - 1] + frac * (time[i] - time[i - 1]);
       splits.push(Math.round(at - lastBoundaryTime));
       lastBoundaryTime = at;
-      nextKm += 1000;
+      nextKm += splitMeters;
     }
   }
   return splits;
@@ -168,9 +169,10 @@ export function evenPaceEfforts(distanceM: number, durationSec: number): BestEff
   return efforts;
 }
 
-export function evenPaceSplits(distanceM: number, durationSec: number): number[] {
-  const perKm = distanceM > 0 ? (durationSec * 1000) / distanceM : 0;
-  return Array.from({ length: Math.floor(distanceM / 1000) }, () => Math.round(perKm));
+export function evenPaceSplits(distanceM: number, durationSec: number, splitMeters = 1000): number[] {
+  if (!Number.isFinite(splitMeters) || splitMeters <= 0) throw new RangeError('Split distance must be positive and finite.');
+  const perSplit = distanceM > 0 ? (durationSec * splitMeters) / distanceM : 0;
+  return Array.from({ length: Math.floor(distanceM / splitMeters) }, () => Math.round(perSplit));
 }
 
 /** Positive elevation change with a hysteresis threshold to ignore GPS altitude noise. */

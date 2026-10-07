@@ -7,7 +7,8 @@ import { CLASSES, CLASS_IDS } from '../game/classes';
 import { reportForRun } from '../game/engine';
 import { runClass, type ClassId, type TrackPoint } from '../game/types';
 import { BOSSES } from '../game/world';
-import { formatDateTime, formatDistance, formatDuration, formatPace } from '../lib/format';
+import { formatDateTime, formatDistance, formatDuration, formatPace, unitMeters } from '../lib/format';
+import { computeSplits, evenPaceSplits } from '../lib/geo';
 import { useGame } from '../state/GameContext';
 import { workoutProgress } from '../training/plans';
 
@@ -40,8 +41,12 @@ export function RunDetailPage() {
 
   const res = game.runResults[run.id];
   const cls = runClass(run);
-  const maxSplit = Math.max(...run.splits, 1);
-  const minSplit = Math.min(...run.splits);
+  const splits = run.source === 'manual'
+    ? evenPaceSplits(run.distanceM, run.durationSec, unitMeters(profile.units))
+    : profile.units === 'km' ? run.splits
+      : points ? computeSplits(points, unitMeters(profile.units)) : [];
+  const maxSplit = Math.max(...splits, 1);
+  const minSplit = Math.min(...splits);
   const attemptBoss = res?.bossAttempt ? BOSSES.find((b) => b.id === res.bossAttempt!.bossId) : undefined;
 
   const setClass = async (c: ClassId) => {
@@ -179,25 +184,32 @@ export function RunDetailPage() {
         </section>
       )}
 
-      {run.splits.length > 0 && (
+      {splits.length > 0 && (
         <section className="panel">
           <h2>Splits{run.source === 'manual' && ' (estimated)'}</h2>
           <table className="splits">
             <tbody>
-              {run.splits.map((s, i) => (
+              {splits.map((s, i) => (
                 <tr key={i}>
-                  <td style={{ width: 50 }}>km {i + 1}</td>
+                  <td style={{ width: 50 }}>{profile.units} {i + 1}</td>
                   <td style={{ width: 60 }}>{formatDuration(s)}</td>
                   <td>
                     <div
                       className="split-bar"
-                      style={{ width: `${(s / maxSplit) * 100}%`, background: s === minSplit && run.splits.length > 1 ? 'var(--gold)' : undefined }}
+                      style={{ width: `${(s / maxSplit) * 100}%`, background: s === minSplit && splits.length > 1 ? 'var(--gold)' : undefined }}
                     />
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </section>
+      )}
+
+      {run.source === 'gps' && profile.units === 'mi' && points?.length === 0 && run.distanceM >= unitMeters('mi') && (
+        <section className="panel">
+          <h2>Splits</h2>
+          <p className="small muted">Mile splits need the recorded GPS route, which is unavailable for this run.</p>
         </section>
       )}
 

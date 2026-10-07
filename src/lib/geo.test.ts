@@ -3,6 +3,7 @@ import {
   TrackAccumulator,
   bestEffort,
   computeSplits,
+  evenPaceSplits,
   elevationGain,
   haversine,
   paceVariability,
@@ -21,6 +22,22 @@ function straightTrack(totalM: number, secPerKm: number, stepM = 10, start = 0):
 }
 
 describe('geo', () => {
+  it('calculates full mile splits from GPS boundaries rather than scaling kilometer splits', () => {
+    const points = straightTrack(5100, 300);
+    const miles = computeSplits(points, 1609.344);
+    expect(miles).toHaveLength(3);
+    miles.forEach(s => expect(s).toBeCloseTo(483, 0));
+    expect(computeSplits(points)).toHaveLength(5);
+  });
+
+  it('estimates manual splits in the selected distance unit, excluding partial splits', () => {
+    expect(evenPaceSplits(1609.344 * 3.5, 2100, 1609.344)).toEqual([600, 600, 600]);
+    expect(evenPaceSplits(5000, 1500)).toEqual([300, 300, 300, 300, 300]);
+    expect(evenPaceSplits(1000, 300, 1609.344)).toEqual([]);
+    expect(evenPaceSplits(0, 300, 1609.344)).toEqual([]);
+    expect(() => computeSplits([], 0)).toThrow(RangeError);
+    expect(() => evenPaceSplits(5000, 1500, Infinity)).toThrow(RangeError);
+  });
   it('rejects malformed fixes and stale fixes after a pause', () => {
     const acc = new TrackAccumulator();
     expect(acc.add({ latitude: NaN, longitude: 0, accuracy: 5, altitude: null, time: 0 })).toBe('invalid');

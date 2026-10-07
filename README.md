@@ -5,6 +5,7 @@ A running app that turns your training into a fantasy RPG. Track runs with live 
 ## Features
 
 Outdoor GPS runs show lightweight route-outline thumbnails in the Adventure Log, with no map-tile downloads. Pauses and signal gaps stay disconnected; manual runs and runs without usable route data keep a workout icon. Open a run for the full map and replay.
+Run-detail splits follow Settings units: full kilometers or full miles. GPS mile splits are recalculated from recorded route points; manual splits are estimated at even pace. Saved kilometer splits remain unchanged for backup compatibility.
 
 **Training plans**
 - Plan includes a monthly calendar with scheduled/completed/skipped sessions and logged runs. Select a day to view its workouts, start a session, or open a run log.
