@@ -9,6 +9,8 @@ export function WorkoutGuide({ workout, elapsedSec, running }: { workout: Planne
   const lastSpoken = useRef(-1);
   const supported = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
   const instruction = current.done ? 'Session time reached. Finish when ready; no extra exercise needed.' : PHASE_LABELS[current.phase.kind];
+  const names = { warmup: 'Warm-up', run: 'Run', walk: 'Recovery walk', cooldown: 'Cooldown' };
+  const next = workout.phases[current.index + 1];
 
   useEffect(() => {
     if (!audio || !running || !supported) return;
@@ -25,9 +27,11 @@ export function WorkoutGuide({ workout, elapsedSec, running }: { workout: Planne
 
   return <section className="panel workout-guide">
     <h2>{workout.title}</h2>
+    <p className="chip" aria-live="polite">{current.done ? 'Workout complete' : `Current phase: ${names[current.phase.kind]}`}</p>
     <p className="workout-instruction" aria-live="polite">{instruction}</p>
     {!current.done && <p className="pixel small">{formatDuration(current.remaining)} left in this block</p>}
     <Bar value={elapsedSec} max={workoutSeconds(workout)} label={`${Math.min(current.index + 1, workout.phases.length)} / ${workout.phases.length} blocks`} />
+    {next && <p className="small muted">Up next: {names[next.kind]} · {formatDuration(next.seconds)}</p>}
     <p className="small muted">Walk and recovery blocks count. Pause stops the workout clock. Stop if you feel pain or unwell.</p>
     {supported ? <label className="day-choice">
       <input type="checkbox" checked={audio} onChange={e => { lastSpoken.current = -1; setAudio(e.target.checked); }} />

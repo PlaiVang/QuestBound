@@ -11,6 +11,8 @@ A running app that turns your training into a fantasy RPG. Track runs with live 
 - Move a session, skip it without penalty, reduce its running blocks, or keep a beginner week's difficulty for the remaining schedule.
 - After an interruption, move all pending sessions forward together without piling up catch-up workouts. Completed logs and partial time progress remain.
 - Start a due session from the journal. Live guidance follows warm-up, running, recovery walks, and cooldown using active time; pausing stops its clock.
+- Each unfinished plan day has a **Start run** action that starts tracking directly and opens the Run screen with its current phase, countdown, and next phase. Future sessions offer **Move to today & start**, with confirmation and recovery-spacing checks.
+- **Change training plan** is available throughout the schedule, between runs. Replacing the active schedule requires confirmation; saved runs and earned progress remain. Only one schedule is active at a time; unfinished old schedules are not archived.
 - Optional spoken cues are best-effort browser/WebView audio. They may stop in the background or with the screen locked; do not rely on them for background workout guidance.
 - Link GPS or manual logs to a planned session and explicitly confirm completion. Walking counts and pace is not a completion requirement. Unknown distance can be omitted for planned manual logs.
 - Training plans and linked run history are included in JSON backups; older backups without plans still import.

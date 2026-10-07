@@ -148,6 +148,7 @@ export function RunPage() {
           {workout && <p className="small">{formatDuration(workoutSeconds(workout))}, including warm-up, any recovery walks, and cooldown. Comfortable effort; no pace target.</p>}
           <Link to="/training" className="small">View or adjust your schedule</Link>
         </section>
+        {workout && <WorkoutGuide key={workout.id} workout={workout} elapsedSec={0} running={false} />}
         <section className="panel">
           <h2>Today's class</h2>
           <p className="small muted" style={{ marginTop: 0 }}>

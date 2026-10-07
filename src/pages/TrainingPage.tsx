@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Bar } from '../components/ui';
 import { dayKey } from '../lib/dates';
 import { formatDuration, uid } from '../lib/format';
@@ -8,9 +8,13 @@ import {
   createPlan, DAY_NAMES, dateMs, PHASE_LABELS, planName, postponePending, rescheduleWorkout,
   workoutProgress, workoutSeconds, type PlanGoal, type TrainingPlan,
 } from '../training/plans';
+import { runSession } from '../tracking/runSession';
+import { useRunSession } from '../tracking/useRunSession';
 
 export function TrainingPage() {
   const { trainingPlan: plan, runs, saveTrainingPlan } = useGame();
+  const navigate = useNavigate();
+  const live = useRunSession();
   const [goal, setGoal] = useState<PlanGoal>('routine');
   const [days, setDays] = useState([1, 3, 6]);
   const [startDate, setStartDate] = useState(() => dayKey(Date.now()));
@@ -35,6 +39,10 @@ export function TrainingPage() {
     setError('');
     setMessage('');
     try {
+      await runSession.restore();
+      if (runSession.getSnapshot().status !== 'idle') {
+        throw new Error('Finish or discard your active run before changing the schedule.');
+      }
       await saveTrainingPlan(make());
       setMessage(success);
       setNewPlan(false);
@@ -47,11 +55,41 @@ export function TrainingPage() {
 
   const create = (event: FormEvent) => {
     event.preventDefault();
+    if (live.status !== 'idle') {
+      setError('Finish or discard your active run before changing plans.');
+      return;
+    }
     if (dateMs(startDate) < dateMs(dayKey(Date.now()))) {
       setError('Start today or in the future. You do not need to make up past sessions.');
       return;
     }
+    if (plan && !window.confirm('Replace your current schedule? Your saved runs and earned progress stay, but unfinished sessions in this schedule will be replaced.')) return;
     void persist(() => createPlan({ id: uid(), goal, startDate, days, easyMinutes: minutes }), 'Your plan is ready.');
+  };
+
+  const startWorkout = async (id: string) => {
+    setBusy(true);
+    setError('');
+    try {
+      await runSession.restore();
+      if (runSession.getSnapshot().status !== 'idle') {
+        throw new Error('A run is already active. Return to Run to finish or discard it before starting another session.');
+      }
+      const session = plan?.sessions.find(s => s.id === id);
+      if (!plan || !session || workoutProgress(session, runs).status !== 'pending') {
+        throw new Error('This session is no longer available. Choose an unfinished session.');
+      }
+      if (session.date > dayKey(Date.now())) {
+        if (!window.confirm('Move this session to today and start it? Recovery spacing will be checked before saving the change.')) return;
+        await saveTrainingPlan(rescheduleWorkout(plan, id, dayKey(Date.now()), runs));
+      }
+      await runSession.start(id);
+      navigate(`/run?workout=${encodeURIComponent(id)}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unable to start this session. Try again.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const completed = plan?.sessions.filter(s => workoutProgress(s, runs).status === 'completed').length ?? 0;
@@ -126,10 +164,14 @@ export function TrainingPage() {
             <h2>{planName(plan.goal)}</h2>
             <Bar value={completed} max={24} label={`${completed} of 24 sessions completed`} />
             <p className="small">No streak penalties or catch-up workouts. Your logged progress stays when you move the schedule.</p>
+            <button className="btn block" disabled={busy || live.status !== 'idle'} onClick={() => setNewPlan(true)}>Change training plan</button>
+            <p className="small muted">You can switch plans at any time between runs. Only one schedule is active; saved run history and earned progress stay.</p>
             {next ? <>
               <p className="small"><b>Next session:</b> {next.title} · {formatDay(next.date)} · {formatDuration(workoutSeconds(next))}</p>
-              {next.date <= today ? <Link to={`/run?workout=${encodeURIComponent(next.id)}`} className="btn primary block">Start planned session</Link>
-                : <p className="small muted">Recovery is part of the plan. Your next session will be available on its scheduled day.</p>}
+              <button className="btn primary block" disabled={busy || live.status !== 'idle'} onClick={() => void startWorkout(next.id)}>
+                {next.date <= today ? 'Start planned run' : 'Move to today & start'}
+              </button>
+              {next.date > today && <p className="small muted">Starting early moves this session to today only if a recovery day remains between sessions.</p>}
             </> : <>
               <p>You've reached the end of this schedule. Your runs remain in your journal.</p>
               <button className="btn primary" onClick={() => setNewPlan(true)}>Preview a new plan</button>
@@ -159,7 +201,7 @@ export function TrainingPage() {
               <ul className="training-sessions">
                 {sessions.map(session => {
                   const progress = workoutProgress(session, runs);
-                  const available = progress.status === 'pending' && session.date <= today;
+                  const available = progress.status === 'pending';
                   return <li key={session.id}>
                     <h3>{session.title}</h3>
                     <p className="small">{formatDay(session.date)} · {formatDuration(workoutSeconds(session))}</p>
@@ -173,8 +215,10 @@ export function TrainingPage() {
                       <ol>{session.phases.map((phase, i) => <li key={i}>{PHASE_LABELS[phase.kind]} · {formatDuration(phase.seconds)}</li>)}</ol>
                     </details>
                     {available && <div className="row wrap">
-                      <Link className="btn small primary" to={`/run?workout=${encodeURIComponent(session.id)}`}>Start</Link>
-                      <Link className="btn small" to={`/run/manual?workout=${encodeURIComponent(session.id)}`}>Log manually</Link>
+                      <button className="btn small primary" disabled={busy || live.status !== 'idle'} onClick={() => void startWorkout(session.id)}>
+                        {session.date <= today ? 'Start run' : 'Move to today & start'}
+                      </button>
+                      {session.date <= today && <Link className="btn small" to={`/run/manual?workout=${encodeURIComponent(session.id)}`}>Log manually</Link>}
                     </div>}
                     {progress.status !== 'completed' && <details className="training-adjust small">
                       <summary>{progress.status === 'skipped' ? 'Restore session' : 'Adjust or skip session'}</summary>
