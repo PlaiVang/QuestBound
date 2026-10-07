@@ -415,6 +415,18 @@ label.field > span {
 }
 .map-empty { display: flex; flex-direction: column; justify-content: center; padding: 20px; text-align: center; }
 
+.countdown-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100dvh; text-align: center; }
+.countdown-number { font-family: var(--pixel); font-size: 5rem; color: var(--gold); margin: 32px 0; }
+.calendar-heading { margin: 16px 0; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.calendar-weekday { text-align: center; font-size: 0.7rem; color: var(--muted); padding: 8px 0; }
+.calendar-day { min-height: 48px; border: 1px solid var(--edge); border-radius: 4px; background: var(--bg-2); color: var(--text); cursor: pointer; padding: 4px 1px; font: inherit; }
+.calendar-day.selected { background: var(--gold); color: var(--border); border-color: var(--gold); }
+.calendar-day[aria-current='date'] { text-decoration: underline; text-underline-offset: 4px; }
+.calendar-markers { display: block; min-height: 14px; font-size: 0.65rem; }
+.calendar-selected { margin-top: 20px; }
+.calendar-session { margin-top: 12px; }
+
 .big-number {
   font-family: var(--pixel);
   font-size: 2rem;

@@ -5,6 +5,8 @@ A running app that turns your training into a fantasy RPG. Track runs with live 
 ## Features
 
 **Training plans**
+- Plan includes a monthly calendar with scheduled/completed/skipped sessions and logged runs. Select a day to view its workouts, start a session, or open a run log.
+- All new live runs have a cancellable five-second countdown. Countdown time is excluded from the run and workout clocks. Resuming an existing paused run does not restart the countdown; manual logging has none.
 - Open **Plan** in the bottom navigation to preview an eight-week, three-session-per-week schedule before accepting it.
 - Choose a steady routine at a comfortable duration, or a beginner walk/run path toward 30 minutes of easy running. These independently authored general templates are not copied from Runna and do not guarantee a 5K distance or provide medical advice.
 - Select three training days with at least one recovery day between sessions. The routine does not automatically increase difficulty; the beginner plan previews its progression in advance.

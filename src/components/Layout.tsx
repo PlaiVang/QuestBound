@@ -25,6 +25,15 @@ export function Layout() {
   const active = session.status !== 'idle';
   useTicker(active && location.pathname !== '/run');
 
+  if (session.countdown !== null) return (
+    <main className="app countdown-screen">
+      <h1>Get ready</h1>
+      <p className="countdown-number" role="status" aria-live="polite" aria-atomic="true">{session.countdown}</p>
+      <p>Your run and workout clock start after the countdown.</p>
+      <button className="btn block" onClick={runSession.cancelCountdown}>Cancel start</button>
+    </main>
+  );
+
   return (
     <>
       <a className="skip-link" href="#main-content" onClick={event => {

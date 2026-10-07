@@ -10,6 +10,7 @@ import {
 } from '../training/plans';
 import { runSession } from '../tracking/runSession';
 import { useRunSession } from '../tracking/useRunSession';
+import { TrainingCalendar } from '../components/TrainingCalendar';
 
 export function TrainingPage() {
   const { trainingPlan: plan, runs, saveTrainingPlan } = useGame();
@@ -83,8 +84,7 @@ export function TrainingPage() {
         if (!window.confirm('Move this session to today and start it? Recovery spacing will be checked before saving the change.')) return;
         await saveTrainingPlan(rescheduleWorkout(plan, id, dayKey(Date.now()), runs));
       }
-      await runSession.start(id);
-      navigate(`/run?workout=${encodeURIComponent(id)}`);
+      if (await runSession.start(id)) navigate(`/run?workout=${encodeURIComponent(id)}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unable to start this session. Try again.');
     } finally {
@@ -105,6 +105,7 @@ export function TrainingPage() {
       {message && <p role="status" className="small">{message}</p>}
       <p className="small muted">Your schedule leads the adventure. Easy means you can talk in full sentences; walking is welcome.
         Stop if you feel pain or unwell. These general templates are not individualized medical or coaching advice.</p>
+      <TrainingCalendar plan={plan} runs={runs} busy={busy || live.status !== 'idle'} onStart={id => void startWorkout(id)} />
 
       {(!plan || newPlan) ? (
         <form onSubmit={create} className="panel">

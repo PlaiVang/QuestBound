@@ -6,6 +6,7 @@ import { uid } from '../lib/format';
 export type SessionStatus = 'idle' | 'running' | 'paused';
 
 export interface SessionSnapshot {
+  countdown: number | null;
   status: SessionStatus;
   startedAt: number | null;
   movingMs: number;
@@ -35,6 +36,9 @@ const PERSIST_EVERY_MS = 5000;
  * can recover the run.
  */
 class RunSession {
+  private countdown: number | null = null;
+  private countdownTimer: ReturnType<typeof setInterval> | null = null;
+  private settleCountdown: ((ready: boolean) => void) | null = null;
   private source: PositionSource = createPositionSource();
   private track = new TrackAccumulator();
   private status: SessionStatus = 'idle';
@@ -65,6 +69,7 @@ class RunSession {
 
   private buildSnapshot(): SessionSnapshot {
     return {
+      countdown: this.countdown,
       status: this.status,
       startedAt: this.startedAt,
       movingMs: this.movingMs(),
@@ -116,7 +121,22 @@ class RunSession {
   };
 
   async start(workoutId: string | null = null) {
-    if (this.status !== 'idle') return;
+    if (this.status !== 'idle' || this.countdown !== null) return false;
+    const ready = await new Promise<boolean>(resolve => {
+      this.settleCountdown = resolve;
+      this.countdown = 5;
+      const deadline = Date.now() + 5000;
+      this.emit();
+      this.countdownTimer = setInterval(() => {
+        this.countdown = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+        if (this.countdown === 0) {
+          this.endCountdown(true);
+        } else {
+          this.emit();
+        }
+      }, 100);
+    });
+    if (!ready) return false;
     this.track = new TrackAccumulator();
     this.startedAt = Date.now();
     this.activeMs = 0;
@@ -132,7 +152,20 @@ class RunSession {
     } catch (e) {
       this.onError(e instanceof Error ? e.message : 'Unable to start GPS tracking.');
     }
+    return true;
   }
+
+  private endCountdown(ready: boolean) {
+    if (this.countdownTimer !== null) clearInterval(this.countdownTimer);
+    this.countdownTimer = null;
+    this.countdown = null;
+    const resolve = this.settleCountdown;
+    this.settleCountdown = null;
+    resolve?.(ready);
+    this.emit();
+  }
+
+  cancelCountdown = () => this.endCountdown(false);
 
   pause() {
     if (this.status !== 'running') return;
@@ -159,6 +192,7 @@ class RunSession {
   }
 
   async discard() {
+    this.cancelCountdown();
     await this.source.stop();
     this.status = 'idle';
     this.startedAt = null;
