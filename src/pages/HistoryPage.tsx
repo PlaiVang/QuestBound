@@ -17,7 +17,7 @@ export function HistoryPage() {
 
   return (
     <>
-      <div className="row between">
+      <div className="history-heading">
         <h1>Adventure log</h1>
         <Link to="/run/manual" className="btn ghost">
           ＋ Log
@@ -47,28 +47,32 @@ export function HistoryPage() {
       )}
       {[...weeks.entries()].map(([week, list]) => (
         <section key={week} className="panel">
-          <div className="row between">
+          <div className="history-week-heading">
             <h2>Week of {formatDate(week)}</h2>
             <span className="small muted">{formatDistance(list.reduce((a, r) => a + r.distanceM, 0), profile.units, 1)}</span>
           </div>
-          <div className="list">
+          <div className="list history-runs">
             {list.map((r) => {
               const cls = CLASSES[runClass(r)];
               const res = game.runResults[r.id];
               return (
                 <Link key={r.id} to={`/runs/${r.id}`}>
                   <RunRouteThumbnail run={r} icon={cls.icon} />
-                  <div className="grow">
-                    <div>
-                      {formatDistance(r.distanceM, profile.units)} <span className="muted small">· {formatDuration(r.durationSec)}</span>
+                  <div className="history-run-details">
+                    <div className="history-run-metrics">
+                      <strong>{formatDistance(r.distanceM, profile.units)}</strong>
+                      <span className="muted small">{formatDuration(r.durationSec)}</span>
                     </div>
-                    <div className="small muted">
-                      {formatDate(r.startedAt)} · {formatPace(r.distanceM, r.durationSec, profile.units)}
-                      {r.source === 'manual' && ' · ✍️'}
-                      {res?.bossDefeated && ' · ⚔️'}
+                    <div className="history-run-meta small muted">
+                      <span>{formatDate(r.startedAt)}</span>
+                      <span>{formatPace(r.distanceM, r.durationSec, profile.units)}</span>
+                    </div>
+                    <div className="history-run-meta small">
+                      <span>+{res?.xp ?? 0} XP</span>
+                      {r.source === 'manual' && <span className="muted">Manual</span>}
+                      {res?.bossDefeated && <span className="muted">Boss defeated</span>}
                     </div>
                   </div>
-                  <span className="small">+{res?.xp ?? 0} XP</span>
                 </Link>
               );
             })}
