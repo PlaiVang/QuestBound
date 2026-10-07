@@ -17,13 +17,15 @@ export function RunAnalysis({ run, points, units }: { run: Run; points: TrackPoi
   return <>
     <section className="panel">
       <h2>Workout summary</h2>
+      {run.simulated && <p className="small">Simulated test run: route and measurements are synthetic.</p>}
       <div className="grid-2">
         <Stat label="Distance" value={formatDistance(run.distanceM, units)} />
         <Stat label="Duration" value={formatDuration(run.durationSec)} />
         <Stat label={`Avg. pace /${units}`} value={formatPace(run.distanceM, run.durationSec, units).replace(/ \/.*/, '')} />
-        <Stat label="Elevation gain" value={`${units === 'mi' ? Math.round(run.elevationGainM * 3.28084) : run.elevationGainM} ${units === 'mi' ? 'ft' : 'm'}`} />
+        <Stat label="Elevation gain" value={run.importedFrom ? 'Not imported' : `${units === 'mi' ? Math.round(run.elevationGainM * 3.28084) : run.elevationGainM} ${units === 'mi' ? 'ft' : 'm'}`} />
       </div>
-      <p className="tiny muted">{run.source === 'manual' ? 'Manually logged · laps estimated at even pace.' : 'GPS recorded · route analysis excludes pauses and missing GPS sections.'}</p>
+      <p className="tiny muted">{run.importedFrom ? 'Samsung Health import · elapsed session duration · laps estimated at even pace · no route imported.'
+        : run.source === 'manual' ? 'Manually logged · laps estimated at even pace.' : 'GPS recorded · route analysis excludes pauses and missing GPS sections.'}</p>
     </section>
     <section className="panel">
       <h2>Route analysis</h2>
@@ -32,7 +34,7 @@ export function RunAnalysis({ run, points, units }: { run: Run; points: TrackPoi
         <button aria-pressed={view === 'charts'} className={view === 'charts' ? 'on' : ''} onClick={() => setView('charts')}>Charts</button>
       </div>
       {points === null && run.source === 'gps' ? <p role="status">Loading route…</p> : view === 'map'
-        ? <RouteReplay points={points ?? []} />
+        ? <RouteReplay points={points ?? []} units={units} />
         : <>
           {(['pace', 'elevation'] as const).map(metric => {
             const available = series.filter(p => p[metric] !== null);

@@ -2,6 +2,7 @@ import { TrackAccumulator, type RawFix } from '../lib/geo';
 import type { TrackPoint } from '../game/types';
 import { createPositionSource, type PositionSource } from './positionSource';
 import { uid } from '../lib/format';
+import { diagnostics } from '../diagnostics/recorder';
 
 export type SessionStatus = 'idle' | 'running' | 'paused';
 
@@ -110,18 +111,20 @@ class RunSession {
     this.lastAccuracy = fix.accuracy;
     this.lastFixAt = Date.now();
     this.error = null;
-    if (this.status === 'running') this.track.add(fix);
+    if (this.status === 'running') diagnostics.gps(this.track.add(fix));
     this.persist();
     this.emit();
   };
 
   private onError = (message: string) => {
+    diagnostics.record('gps.error');
     this.error = message;
     this.emit();
   };
 
   async start(workoutId: string | null = null) {
     if (this.status !== 'idle' || this.countdown !== null) return false;
+    diagnostics.record('run.countdown');
     const ready = await new Promise<boolean>(resolve => {
       this.settleCountdown = resolve;
       this.countdown = 5;
@@ -142,6 +145,7 @@ class RunSession {
     this.activeMs = 0;
     this.resumedAt = Date.now();
     this.status = 'running';
+    diagnostics.record('run.started');
     this.error = null;
     this.workoutId = workoutId;
     this.runId = uid();
@@ -165,13 +169,18 @@ class RunSession {
     this.emit();
   }
 
-  cancelCountdown = () => this.endCountdown(false);
+  cancelCountdown = () => {
+    if (this.countdown !== null) diagnostics.record('run.cancel-countdown');
+    this.endCountdown(false);
+  };
 
   pause() {
     if (this.status !== 'running') return;
     this.activeMs = this.movingMs();
     this.resumedAt = null;
     this.status = 'paused';
+    diagnostics.flushGps();
+    diagnostics.record('run.paused');
     this.track.newSegment();
     this.persist(true);
     this.emit();
@@ -181,12 +190,14 @@ class RunSession {
     if (this.status !== 'paused') return;
     this.resumedAt = Date.now();
     this.status = 'running';
+    diagnostics.record('run.resumed');
     this.persist(true);
     this.emit();
   }
 
   /** Pause first; keep recovery data until the caller has successfully saved it. */
   async finish() {
+    diagnostics.record('run.finished');
     this.pause();
     return { id: this.runId ?? uid(), startedAt: this.startedAt ?? Date.now(), movingSec: this.movingMs() / 1000, points: this.track.points };
   }
@@ -194,6 +205,8 @@ class RunSession {
   async discard() {
     this.cancelCountdown();
     await this.source.stop();
+    diagnostics.flushGps();
+    diagnostics.record('run.discarded');
     this.status = 'idle';
     this.startedAt = null;
     this.activeMs = 0;
@@ -222,6 +235,7 @@ class RunSession {
       this.activeMs = data.activeMs + (data.resumedAt ? Math.max(0, (data.points.at(-1)?.[2] ?? data.resumedAt) - data.resumedAt) : 0);
       this.resumedAt = null;
       this.status = 'paused';
+      diagnostics.record('run.restored');
       this.persist(true);
       this.emit();
       await this.source.start(this.onFix, this.onError).catch((e: unknown) =>
@@ -229,6 +243,7 @@ class RunSession {
       );
       return true;
     } catch {
+      diagnostics.record('run.restore-failed');
       localStorage.removeItem(STORAGE_KEY);
       return false;
     }

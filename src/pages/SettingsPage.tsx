@@ -1,12 +1,14 @@
-import { Capacitor } from '@capacitor/core';
-import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
-import { Share } from '@capacitor/share';
-import { useRef, useState } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
 import { db } from '../data/db';
 import { CLASSES, CLASS_IDS } from '../game/classes';
 import type { Units } from '../game/types';
 import { useGame } from '../state/GameContext';
+import { SamsungHealthSettings } from '../components/SamsungHealthSettings';
+import { TestingDiagnostics } from '../components/TestingDiagnostics';
+import { featureFlags } from '../config/featureFlags';
+import { exportJson } from '../lib/exportJson';
 
+const AccountSettings = lazy(() => import('../components/AccountSettings').then(m => ({ default: m.AccountSettings })));
 export function SettingsPage() {
   const { profile, saveProfile, reload } = useGame();
   const [name, setName] = useState<string | null>(null);
@@ -30,19 +32,8 @@ export function SettingsPage() {
 
   const exportData = async () => {
     try {
-      const json = JSON.stringify(await db.exportBackup());
       const filename = `questbound-backup-${new Date().toISOString().slice(0, 10)}.json`;
-      if (Capacitor.isNativePlatform()) {
-        const res = await Filesystem.writeFile({ path: filename, data: json, directory: Directory.Cache, encoding: Encoding.UTF8 });
-        await Share.share({ title: 'QuestBound backup', url: res.uri });
-      } else {
-        const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
+      await exportJson(await db.exportBackup(), filename, 'QuestBound backup');
       setStatus('Backup exported.');
     } catch (e) {
       setStatus(`Export failed: ${(e as Error).message}`);
@@ -64,6 +55,9 @@ export function SettingsPage() {
   return (
     <>
       <h1>Settings</h1>
+      {featureFlags.accounts && <Suspense fallback={<section className="panel" role="status">Loading account…</section>}><AccountSettings /></Suspense>}
+      {featureFlags.samsungHealthImport && <SamsungHealthSettings />}
+      <TestingDiagnostics />
       <section className="panel">
         <h2>Hero</h2>
         <div>

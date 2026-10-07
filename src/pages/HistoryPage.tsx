@@ -66,7 +66,8 @@ export function HistoryPage() {
                     </div>
                     <div className="history-run-meta small">
                       <span>+{res?.xp ?? 0} XP</span>
-                      {r.source === 'manual' && <span className="muted">Manual</span>}
+                      {r.source === 'manual' && <span className="muted">{r.importedFrom ? 'Samsung Health' : 'Manual'}</span>}
+                      {r.simulated && <span className="muted">Simulated test run</span>}
                       {res?.bossDefeated && <span className="muted">Boss defeated</span>}
                     </div>
                   </div>

@@ -10,7 +10,9 @@ import { SettingsPage } from './pages/SettingsPage';
 import { WorldPage } from './pages/WorldPage';
 import { TrainingPage } from './pages/TrainingPage';
 import { GameProvider, useGame } from './state/GameContext';
+import { featureFlags } from './config/featureFlags';
 
+const AuthProvider = lazy(() => import('./auth/AuthContext').then(m => ({ default: m.AuthProvider })));
 const RunPage = lazy(() => import('./pages/RunPage').then(m => ({ default: m.RunPage })));
 const RunDetailPage = lazy(() => import('./pages/RunDetailPage').then(m => ({ default: m.RunDetailPage })));
 const StatsPage = lazy(() => import('./pages/StatsPage').then(m => ({ default: m.StatsPage })));
@@ -54,11 +56,12 @@ function Routed() {
 }
 
 export default function App() {
-  return (
+  const content = (
     <GameProvider>
       <HashRouter>
         <Routed />
       </HashRouter>
     </GameProvider>
   );
+  return featureFlags.accounts ? <Suspense fallback={<div role="status">Loading account…</div>}><AuthProvider>{content}</AuthProvider></Suspense> : content;
 }

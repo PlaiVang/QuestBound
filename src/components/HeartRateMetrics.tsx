@@ -28,7 +28,7 @@ export function HeartRateMetrics({ run }: { run: Run }) {
       <Stat label="Average" value={`${run.heartRate.averageBpm} bpm`} />
       <Stat label="Maximum" value={`${run.heartRate.maxBpm} bpm`} />
     </div> : <p className="small muted">Not recorded</p>}
-    <p className="small muted">Enter readings from your watch or heart-rate sensor. These are manually entered measurements, not GPS estimates. Automatic watch sync and heart-rate zones are not available yet.</p>
+    <p className="small muted">{run.heartRate?.source === 'health-connect' ? 'Imported Samsung Health samples via Health Connect. ' : 'Manually entered measurements. '}Enter readings from your watch or heart-rate sensor to update them. GPS never estimates heart rate. Live watch recording and heart-rate zones are not available yet.</p>
     <form onSubmit={e => { e.preventDefault(); void save(); }}>
       <div className="grid-2">
         <label className="field">Average bpm<input type="number" min="30" max="250" step="1" required value={average} onChange={e => setAverage(e.target.value)} /></label>

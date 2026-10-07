@@ -2,6 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import type { Profile, Redemption, Reward, Run, TrackPoint } from '../game/types';
 import { validatePlan, type TrainingPlan } from '../training/plans';
 import { validateHeartRate } from '../lib/heartRate';
+import { diagnostics } from '../diagnostics/recorder';
 
 export interface Backup {
   app: 'questbound';
@@ -137,14 +138,23 @@ async function getJson<T>(key: string, fallback: T): Promise<T> {
 }
 
 export const db = {
-  init: () => driver.init(),
+  async init() {
+    try { await driver.init(); diagnostics.record('storage.ready'); }
+    catch (e) { diagnostics.record('storage.failed'); throw e; }
+  },
   runs: () => driver.allRuns(),
   saveRun: async (run: Run, points?: TrackPoint[]) => {
-    if (run.heartRate !== undefined) validateHeartRate(run.heartRate);
-    await driver.putRun(run);
-    if (points?.length) await driver.putPoints(run.id, points);
+    try {
+      if (run.heartRate !== undefined) validateHeartRate(run.heartRate);
+      await driver.putRun(run);
+      if (points?.length) await driver.putPoints(run.id, points);
+      diagnostics.record('storage.run-saved', { count: points?.length ?? 0 });
+    } catch (e) { diagnostics.record('storage.write-failed'); throw e; }
   },
-  deleteRun: (id: string) => driver.deleteRun(id),
+  async deleteRun(id: string) {
+    try { await driver.deleteRun(id); diagnostics.record('storage.run-deleted'); }
+    catch (e) { diagnostics.record('storage.write-failed'); throw e; }
+  },
   points: (id: string) => driver.getPoints(id),
   profile: () => getJson<Profile>('profile', DEFAULT_PROFILE),
   saveProfile: (p: Profile) => driver.setKv('profile', JSON.stringify(p)),
@@ -197,6 +207,8 @@ export const db = {
       !Number.isFinite(r.elevationGainM) || !classes.includes(r.autoClass) ||
       (r.classOverride !== undefined && !classes.includes(r.classOverride)) ||
       !['gps', 'manual'].includes(r.source) || !Array.isArray(r.splits) ||
+      (r.importedFrom !== undefined && r.importedFrom !== 'samsung-health') ||
+      (r.simulated !== undefined && typeof r.simulated !== 'boolean') ||
       r.splits.some(s => !Number.isFinite(s) || s < 0) || !r.bestEfforts ||
       Object.values(r.bestEfforts).some(s => typeof s !== 'number' || !Number.isFinite(s) || s < 0) ||
       (r.training !== undefined && (!r.training || typeof r.training.sessionId !== 'string' || typeof r.training.completed !== 'boolean')))) {

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { db } from './db';
 import { createPlan } from '../training/plans';
 import { manualRun } from '../game/runFactory';
+import { simulatedRuns } from '../testing/simulatedRuns';
 
 vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => false } }));
 const values = new Map<string, string>();
@@ -23,6 +24,30 @@ beforeEach(() => {
 });
 
 describe('training backup persistence', () => {
+  it('keeps real runs and settings when adding/removing test fixtures and round-trips the markers', async () => {
+    const real = manualRun({ startedAt: 10000, distanceM: 2000, durationSec: 600, elevationGainM: 0 }, []);
+    await db.saveRun(real);
+    await db.saveProfile({ heroName: 'Tester', units: 'mi' });
+    for (const { run, points } of simulatedRuns(Date.UTC(2026, 9, 5), [real])) await db.saveRun(run, points);
+    const backup = await db.exportBackup();
+    await db.importBackup(backup);
+    const all = await db.runs();
+    expect(all.filter(r => r.simulated)).toHaveLength(6);
+    expect((await db.points('questbound-test-v1-3')).at(-1)?.[4]).toBe(1);
+    for (const run of all.filter(r => r.simulated === true)) await db.deleteRun(run.id);
+    expect(await db.runs()).toEqual([real]);
+    expect(await db.profile()).toEqual({ heroName: 'Tester', units: 'mi' });
+  });
+  it('round-trips imported provenance and heart rate without authentication tokens', async () => {
+    const run = manualRun({ startedAt: Date.now(), distanceM: 5000, durationSec: 1800, elevationGainM: 0 }, []);
+    run.importedFrom = 'samsung-health';
+    run.heartRate = { averageBpm: 130, maxBpm: 160, source: 'health-connect' };
+    await db.saveRun(run);
+    const backup = await db.exportBackup();
+    await db.importBackup(backup);
+    expect((await db.runs())[0]).toMatchObject({ importedFrom: 'samsung-health', heartRate: run.heartRate });
+    expect(Object.keys(backup)).not.toContain('session');
+  });
   it('round-trips heart rate and rejects invalid imports before clearing runs', async () => {
     const run = manualRun({ startedAt: Date.now(), distanceM: 5000, durationSec: 1800, elevationGainM: 0 }, []);
     run.heartRate = { averageBpm: 140, maxBpm: 180, source: 'manual' };

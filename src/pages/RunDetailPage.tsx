@@ -188,7 +188,7 @@ export function RunDetailPage() {
         <ul className="list small">
           <li>
             <span className="grow">Elevation gain</span>
-            <span>{run.elevationGainM} m</span>
+            <span>{run.importedFrom ? 'Not imported' : `${run.elevationGainM} m`}</span>
           </li>
           {run.paceVariability !== null && (
             <li>
@@ -200,7 +200,7 @@ export function RunDetailPage() {
           )}
           <li>
             <span className="grow">Source</span>
-            <span>{run.source === 'gps' ? '📡 GPS' : '✍️ Manual'}</span>
+            <span>{run.importedFrom ? 'Samsung Health' : run.source === 'gps' ? '📡 GPS' : '✍️ Manual'}</span>
           </li>
           {run.notes && (
             <li>

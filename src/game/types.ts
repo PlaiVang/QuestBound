@@ -21,7 +21,9 @@ export interface Run {
   /** Coefficient of variation of pace; higher means more interval-like. */
   paceVariability: number | null;
   notes?: string;
-  heartRate?: { averageBpm: number; maxBpm: number; source: 'manual' };
+  heartRate?: { averageBpm: number; maxBpm: number; source: 'manual' | 'health-connect' };
+  importedFrom?: 'samsung-health';
+  simulated?: boolean;
   training?: { sessionId: string; completed: boolean };
 }
 

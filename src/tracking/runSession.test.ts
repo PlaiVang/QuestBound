@@ -66,6 +66,8 @@ describe('planned live sessions', () => {
       expect(runSession.getSnapshot().status).toBe('running');
       expect(runSession.movingMs()).toBe(0);
       await runSession.discard();
+      const { diagnostics } = await import('../diagnostics/recorder');
+      expect(diagnostics.export().events.map(e => e.code)).toEqual(['run.countdown', 'run.started', 'run.discarded']);
       vi.useRealTimers();
     });
     it('cancels without starting or creating recovery data and prevents duplicate starts', async () => {

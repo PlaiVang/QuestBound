@@ -12,6 +12,8 @@
         "test": "vitest run"
     },
     "dependencies": {
+        "@supabase/supabase-js": "^2.57.0",
+        "@capacitor/browser": "^8.0.0",
         "@capacitor-community/background-geolocation": "^1.2.26",
         "@capacitor-community/keep-awake": "^8.0.1",
         "@capacitor-community/sqlite": "^8.1.1",
