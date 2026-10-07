@@ -7,6 +7,8 @@ A running app that turns your training into a fantasy RPG. Track runs with live 
 Outdoor GPS runs show lightweight route-outline thumbnails in the Adventure Log, with no map-tile downloads. Pauses and signal gaps stay disconnected; manual runs and runs without usable route data keep a workout icon. Open a run for the full map and replay.
 Run-detail splits follow Settings units: full kilometers or full miles. GPS mile splits are recalculated from recorded route points; manual splits are estimated at even pace. Saved kilometer splits remain unchanged for backup compatibility.
 
+Android SQLite is configured without encryption, matching the existing database connection. If startup reports `CapacitorSQLitePlugin: null`, rebuild, sync, and install the updated app over the existing installation; do not clear app data or uninstall to troubleshoot, as that removes local runs.
+
 **Training plans**
 - Plan includes a monthly calendar with scheduled/completed/skipped sessions and logged runs. Select a day to view its workouts, start a session, or open a run log.
 - All new live runs have a cancellable five-second countdown. Countdown time is excluded from the run and workout clocks. Resuming an existing paused run does not restart the countdown; manual logging has none.
