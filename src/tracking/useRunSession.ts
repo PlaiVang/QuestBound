@@ -10,7 +10,10 @@ export function useTicker(active: boolean) {
   const [, setTick] = useState(0);
   useEffect(() => {
     if (!active) return;
-    const id = setInterval(() => setTick((t) => t + 1), 1000);
+    const id = setInterval(() => {
+      runSession.checkpoint();
+      setTick((t) => t + 1);
+    }, 1000);
     return () => clearInterval(id);
   }, [active]);
 }

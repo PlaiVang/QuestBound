@@ -5,6 +5,7 @@ import type { ClassId } from '../game/types';
 import { formatDate, formatDistance, formatPace } from '../lib/format';
 import { useGame } from '../state/GameContext';
 import { runClass } from '../game/types';
+import { planName, workoutProgress } from '../training/plans';
 
 const AVATARS: Record<ClassId, string> = { ranger: '🧝', rogue: '🥷', paladin: '🤴', berserker: '🧔' };
 
@@ -15,7 +16,8 @@ export function questProgressText(progress: number, target: number, unit: string
 }
 
 export function DashboardPage() {
-  const { game, runs, profile } = useGame();
+  const { game, runs, profile, trainingPlan } = useGame();
+  const completed = trainingPlan?.sessions.filter(s => workoutProgress(s, runs).status === 'completed').length ?? 0;
   const main = CLASS_IDS.reduce((a, b) => (game.classes[b].xp > game.classes[a].xp ? b : a), 'paladin' as ClassId);
   const avatar = runs.length ? AVATARS[main] : '🧙';
   const activeBoss = game.world.bosses.find((b) => b.status === 'active');
@@ -44,10 +46,17 @@ export function DashboardPage() {
         </div>
       </section>
 
-      {runs.length === 0 && (
+      <section className="panel">
+        <h2>{trainingPlan ? planName(trainingPlan.goal) : 'Your training comes first'}</h2>
+        <p className="small">{trainingPlan ? `${completed} planned sessions completed. Rest days and forgiving restarts are part of the journey.`
+          : 'Choose three training days and preview your workouts before starting. Build a routine or take a walk/run path toward your first 5K.'}</p>
+        <Link to="/training" className="btn primary block">{trainingPlan ? 'Open training journal' : 'Preview a training plan'}</Link>
+      </section>
+
+      {runs.length === 0 && !trainingPlan && (
         <section className="panel center">
           <h2>Your quest begins</h2>
-          <p className="small">Every kilometer you run moves your hero across the realm, earns XP and gold, and powers you up against monsters.</p>
+          <p className="small">You can also log runs without a plan. The original distance-based Realm and rewards remain available while the training adventure is developed.</p>
           <Link to="/run" className="btn primary big block">
             🏃 Start your first run
           </Link>
@@ -92,9 +101,9 @@ export function DashboardPage() {
         </div>
       </section>
 
-      {activeBoss && (
+      {!trainingPlan && activeBoss && (
         <Link to="/world" className="panel" style={{ display: 'block', color: 'inherit', textDecoration: 'none' }}>
-          <h2>Next boss</h2>
+          <h2>Realm boss (distance prototype)</h2>
           <div className="row">
             <div className="icon-lg">{activeBoss.boss.icon}</div>
             <div className="grow">
@@ -113,7 +122,7 @@ export function DashboardPage() {
         </Link>
       )}
 
-      <Link to="/quests" className="panel" style={{ display: 'block', color: 'inherit', textDecoration: 'none' }}>
+      {!trainingPlan && <Link to="/quests" className="panel" style={{ display: 'block', color: 'inherit', textDecoration: 'none' }}>
         <h2>Today's quest</h2>
         <div className="row">
           <div className="icon-lg">{game.quests.daily.quest.icon}</div>
@@ -130,7 +139,7 @@ export function DashboardPage() {
             />
           </div>
         </div>
-      </Link>
+      </Link>}
 
       {recent.length > 0 && (
         <section className="panel">

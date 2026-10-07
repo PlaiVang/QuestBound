@@ -1,6 +1,7 @@
 import { TrackAccumulator, type RawFix } from '../lib/geo';
 import type { TrackPoint } from '../game/types';
 import { createPositionSource, type PositionSource } from './positionSource';
+import { uid } from '../lib/format';
 
 export type SessionStatus = 'idle' | 'running' | 'paused';
 
@@ -13,13 +14,16 @@ export interface SessionSnapshot {
   lastAccuracy: number | null;
   lastFixAt: number | null;
   error: string | null;
+  workoutId: string | null;
 }
 
 interface Persisted {
+  runId?: string;
   startedAt: number;
   activeMs: number;
   resumedAt: number | null;
   points: TrackPoint[];
+  workoutId?: string | null;
 }
 
 const STORAGE_KEY = 'questbound:active-run';
@@ -40,6 +44,8 @@ class RunSession {
   private lastAccuracy: number | null = null;
   private lastFixAt: number | null = null;
   private error: string | null = null;
+  private workoutId: string | null = null;
+  private runId: string | null = null;
   private lastPersist = 0;
   private listeners = new Set<() => void>();
   private snapshot: SessionSnapshot = this.buildSnapshot();
@@ -50,6 +56,7 @@ class RunSession {
   };
 
   getSnapshot = () => this.snapshot;
+  checkpoint = () => this.persist();
 
   /** Moving time, including the time elapsed since the last resume. */
   movingMs(now = Date.now()) {
@@ -66,6 +73,7 @@ class RunSession {
       lastAccuracy: this.lastAccuracy,
       lastFixAt: this.lastFixAt,
       error: this.error,
+      workoutId: this.workoutId,
     };
   }
 
@@ -83,10 +91,12 @@ class RunSession {
       return;
     }
     const data: Persisted = {
+      runId: this.runId ?? undefined,
       startedAt: this.startedAt,
-      activeMs: this.activeMs,
-      resumedAt: this.status === 'running' ? this.resumedAt : null,
+      activeMs: this.movingMs(now),
+      resumedAt: null,
       points: this.track.points,
+      workoutId: this.workoutId,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }
@@ -105,7 +115,7 @@ class RunSession {
     this.emit();
   };
 
-  async start() {
+  async start(workoutId: string | null = null) {
     if (this.status !== 'idle') return;
     this.track = new TrackAccumulator();
     this.startedAt = Date.now();
@@ -113,6 +123,8 @@ class RunSession {
     this.resumedAt = Date.now();
     this.status = 'running';
     this.error = null;
+    this.workoutId = workoutId;
+    this.runId = uid();
     this.persist(true);
     this.emit();
     try {
@@ -140,11 +152,10 @@ class RunSession {
     this.emit();
   }
 
-  /** Stops tracking and returns the finished run's raw data. */
+  /** Pause first; keep recovery data until the caller has successfully saved it. */
   async finish() {
-    const result = { startedAt: this.startedAt ?? Date.now(), movingSec: this.movingMs() / 1000, points: this.track.points };
-    await this.discard();
-    return result;
+    this.pause();
+    return { id: this.runId ?? uid(), startedAt: this.startedAt ?? Date.now(), movingSec: this.movingMs() / 1000, points: this.track.points };
   }
 
   async discard() {
@@ -154,6 +165,8 @@ class RunSession {
     this.activeMs = 0;
     this.resumedAt = null;
     this.error = null;
+    this.workoutId = null;
+    this.runId = null;
     this.track = new TrackAccumulator();
     this.persist(true);
     this.emit();
@@ -167,12 +180,15 @@ class RunSession {
     try {
       const data = JSON.parse(raw) as Persisted;
       this.startedAt = data.startedAt;
+      this.workoutId = data.workoutId ?? null;
+      this.runId = data.runId ?? uid();
       this.track = TrackAccumulator.from(data.points);
       this.track.newSegment();
       // Time while the app was dead is not counted; the run resumes paused.
       this.activeMs = data.activeMs + (data.resumedAt ? Math.max(0, (data.points.at(-1)?.[2] ?? data.resumedAt) - data.resumedAt) : 0);
       this.resumedAt = null;
       this.status = 'paused';
+      this.persist(true);
       this.emit();
       await this.source.start(this.onFix, this.onError).catch((e: unknown) =>
         this.onError(e instanceof Error ? e.message : 'Unable to start GPS tracking.'),

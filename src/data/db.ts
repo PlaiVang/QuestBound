@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import type { Profile, Redemption, Reward, Run, TrackPoint } from '../game/types';
+import { validatePlan, type TrainingPlan } from '../training/plans';
 
 export interface Backup {
   app: 'questbound';
@@ -10,6 +11,7 @@ export interface Backup {
   points: Record<string, TrackPoint[]>;
   rewards: Reward[];
   redemptions: Redemption[];
+  trainingPlan?: TrainingPlan | null;
 }
 
 export const DEFAULT_PROFILE: Profile = { heroName: 'Hero', units: 'km' };
@@ -148,6 +150,15 @@ export const db = {
   saveRewards: (r: Reward[]) => driver.setKv('rewards', JSON.stringify(r)),
   redemptions: () => getJson<Redemption[]>('redemptions', []),
   saveRedemptions: (r: Redemption[]) => driver.setKv('redemptions', JSON.stringify(r)),
+  async trainingPlan(): Promise<TrainingPlan | null> {
+    const plan = await getJson<TrainingPlan | null>('training-plan', null);
+    if (plan !== null) validatePlan(plan);
+    return plan;
+  },
+  async saveTrainingPlan(plan: TrainingPlan) {
+    validatePlan(plan);
+    await driver.setKv('training-plan', JSON.stringify(plan));
+  },
 
   async exportBackup(): Promise<Backup> {
     const runs = await driver.allRuns();
@@ -165,6 +176,7 @@ export const db = {
       points,
       rewards: await db.rewards(),
       redemptions: await db.redemptions(),
+      trainingPlan: await db.trainingPlan(),
     };
   },
 
@@ -174,10 +186,43 @@ export const db = {
     if (!b || b.app !== 'questbound' || b.version !== 1 || !Array.isArray(b.runs)) {
       throw new Error('This file is not a QuestBound backup.');
     }
+    // Validate the optional extension before replacing any existing data.
+    if (b.trainingPlan != null) validatePlan(b.trainingPlan);
+    const classes = ['ranger', 'rogue', 'paladin', 'berserker'];
+    if (b.runs.some(r => !r || typeof r.id !== 'string' || !r.id || !Number.isFinite(r.startedAt) ||
+      !Number.isFinite(r.durationSec) || r.durationSec < 0 || !Number.isFinite(r.distanceM) || r.distanceM < 0 ||
+      !Number.isFinite(r.elevationGainM) || !classes.includes(r.autoClass) ||
+      (r.classOverride !== undefined && !classes.includes(r.classOverride)) ||
+      !['gps', 'manual'].includes(r.source) || !Array.isArray(r.splits) ||
+      r.splits.some(s => !Number.isFinite(s) || s < 0) || !r.bestEfforts ||
+      Object.values(r.bestEfforts).some(s => typeof s !== 'number' || !Number.isFinite(s) || s < 0) ||
+      (r.training !== undefined && (!r.training || typeof r.training.sessionId !== 'string' || typeof r.training.completed !== 'boolean')))) {
+      throw new Error('The backup contains invalid run data.');
+    }
+    if (new Set(b.runs.map(r => r.id)).size !== b.runs.length) throw new Error('The backup contains duplicate run IDs.');
+    if (b.profile && (typeof b.profile.heroName !== 'string' || !['km', 'mi'].includes(b.profile.units))) {
+      throw new Error('The backup contains an invalid profile.');
+    }
+    if (b.rewards && (!Array.isArray(b.rewards) || b.rewards.some(r => !r || typeof r.id !== 'string' ||
+      typeof r.name !== 'string' || typeof r.icon !== 'string' || !Number.isFinite(r.cost) || r.cost < 1))) {
+      throw new Error('The backup contains invalid rewards.');
+    }
+    if (b.redemptions && (!Array.isArray(b.redemptions) || b.redemptions.some(r => !r || typeof r.id !== 'string' ||
+      typeof r.rewardId !== 'string' || typeof r.name !== 'string' || typeof r.icon !== 'string' ||
+      !Number.isFinite(r.cost) || r.cost < 0 || !Number.isFinite(r.at)))) {
+      throw new Error('The backup contains invalid purchases.');
+    }
+    if (b.points && (typeof b.points !== 'object' || Object.values(b.points).some(points =>
+      !Array.isArray(points) || points.some(p => !Array.isArray(p) || p.length !== 5 ||
+        !Number.isFinite(p[0]) || Math.abs(p[0]) > 90 || !Number.isFinite(p[1]) || Math.abs(p[1]) > 180 ||
+        !Number.isFinite(p[2]) || (p[3] !== null && !Number.isFinite(p[3])) || !Number.isInteger(p[4]))))) {
+      throw new Error('The backup contains invalid route points.');
+    }
     await driver.clear();
     for (const r of b.runs) await db.saveRun(r, b.points?.[r.id]);
     await db.saveProfile({ ...DEFAULT_PROFILE, ...b.profile });
     await db.saveRewards(b.rewards ?? DEFAULT_REWARDS);
     await db.saveRedemptions(b.redemptions ?? []);
+    if (b.trainingPlan) await db.saveTrainingPlan(b.trainingPlan);
   },
 };

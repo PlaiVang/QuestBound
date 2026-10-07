@@ -9,12 +9,13 @@ import { runClass, type ClassId, type TrackPoint } from '../game/types';
 import { BOSSES } from '../game/world';
 import { formatDateTime, formatDistance, formatDuration, formatPace } from '../lib/format';
 import { useGame } from '../state/GameContext';
+import { workoutProgress } from '../training/plans';
 
 export function RunDetailPage() {
   const { id = '' } = useParams();
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { runs, game, profile, redemptions, saveRun, deleteRun } = useGame();
+  const { runs, game, profile, redemptions, saveRun, deleteRun, trainingPlan } = useGame();
   const run = runs.find((r) => r.id === id);
   const [points, setPoints] = useState<TrackPoint[] | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -54,10 +55,24 @@ export function RunDetailPage() {
 
   return (
     <>
+      {run.training && <section className="panel">
+        <h2>{run.training.completed ? 'Planned session complete' : 'Partial workout saved'}</h2>
+        <p className="small">{run.training.completed ? 'You completed your planned session at your own pace. Walking counts.'
+          : 'This attempt stays in your journal. Adjust the schedule when ready; there is no catch-up debt.'}</p>
+        {trainingPlan && (() => {
+          const session = trainingPlan.sessions.find(s => s.id === run.training?.sessionId);
+          if (!session) return null;
+          const week = trainingPlan.sessions.filter(s => s.week === session.week);
+          const completed = week.filter(s => workoutProgress(s, runs).status === 'completed').length;
+          return <p className="small">Week {session.week} · {completed} / 3 planned sessions completed.
+            {completed === 3 && ' Training milestone reached!'}</p>;
+        })()}
+        <Link to="/training" className="btn">Back to training journal</Link>
+      </section>}
       {report && (
         <section className="panel victory">
           <div className="burst">{report.bossDefeated ? report.bossDefeated.icon : report.levelAfter > report.levelBefore ? '⭐' : '🏆'}</div>
-          <h1 style={{ color: 'var(--gold)' }}>{report.bossDefeated ? `${report.bossDefeated.name} defeated!` : 'Quest complete!'}</h1>
+          <h1 style={{ color: 'var(--gold)' }}>{run.training ? 'Run saved!' : report.bossDefeated ? `${report.bossDefeated.name} defeated!` : 'Quest complete!'}</h1>
           <div className="grid-2" style={{ marginBottom: 10 }}>
             <Stat label="XP" value={`+${report.xpGained}`} />
             <Stat label="Gold" value={`+${report.goldGained}`} />
@@ -88,7 +103,7 @@ export function RunDetailPage() {
               {a.icon} Badge unlocked: <b>{a.name}</b> (+{a.gold} gold)
             </p>
           ))}
-          {!report.bossDefeated && attemptBoss && res.bossAttempt && (
+          {!run.training && !report.bossDefeated && attemptBoss && res.bossAttempt && (
             <p className="small">
               {attemptBoss.icon} You hit the {attemptBoss.name} for {Math.round(res.bossAttempt.progress * 100)}% of its HP, but it still stands.
             </p>
@@ -126,7 +141,8 @@ export function RunDetailPage() {
 
       {res && (
         <section className="panel">
-          <h2>Rewards</h2>
+          <h2>{run.training ? 'Prototype XP and rewards' : 'Rewards'}</h2>
+          {run.training && <p className="small muted">These original game calculations are separate from training completion. Extra distance is not required.</p>}
           <ul className="list small">
             <li>
               <span className="grow">Distance & time</span>

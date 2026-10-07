@@ -38,6 +38,7 @@ export function WorldPage() {
   return (
     <>
       <h1>The Realm</h1>
+      <p className="small muted">Original distance-based prototype. These optional bosses do not control training-plan completion. Your schedule and recovery come first.</p>
       <svg className="world-svg" viewBox="0 0 100 100" role="img" aria-label="World map">
         <defs>
           <radialGradient id="land" cx="50%" cy="60%" r="75%">

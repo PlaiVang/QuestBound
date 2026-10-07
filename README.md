@@ -1,8 +1,21 @@
 # ?? QuestBound
 
-A running app that turns your training into a fantasy RPG. Track runs with live GPS, keep a training log, and watch your hero level up, cross a world map, and defeat bosses — all powered by the kilometers you actually run.
+A running app that turns your training into a fantasy RPG. Track runs with live GPS, keep a training log, and watch your hero level up, cross a world map, and defeat bosses ï¿½ all powered by the kilometers you actually run.
 
 ## Features
+
+**Training plans**
+- Open **Plan** in the bottom navigation to preview an eight-week, three-session-per-week schedule before accepting it.
+- Choose a steady routine at a comfortable duration, or a beginner walk/run path toward 30 minutes of easy running. These independently authored general templates are not copied from Runna and do not guarantee a 5K distance or provide medical advice.
+- Select three training days with at least one recovery day between sessions. The routine does not automatically increase difficulty; the beginner plan previews its progression in advance.
+- Move a session, skip it without penalty, reduce its running blocks, or keep a beginner week's difficulty for the remaining schedule.
+- After an interruption, move all pending sessions forward together without piling up catch-up workouts. Completed logs and partial time progress remain.
+- Start a due session from the journal. Live guidance follows warm-up, running, recovery walks, and cooldown using active time; pausing stops its clock.
+- Optional spoken cues are best-effort browser/WebView audio. They may stop in the background or with the screen locked; do not rely on them for background workout guidance.
+- Link GPS or manual logs to a planned session and explicitly confirm completion. Walking counts and pace is not a completion requirement. Unknown distance can be omitted for planned manual logs.
+- Training plans and linked run history are included in JSON backups; older backups without plans still import.
+
+**Scope:** the original distance/pace-based Realm, XP, quests, and streak mechanics remain a labeled prototype. They do not decide whether a planned workout is complete. Dungeon combat, card packs, loadouts, and party systems are deferred until the game rules are settled.
 
 **Training**
 - Live GPS run tracking with pause/resume. It keeps tracking with the screen off (Android foreground service) and recovers the run if the app crashes.
@@ -65,6 +78,7 @@ Vite, React, and TypeScript, packaged with Capacitor 8.
 | Charts | Recharts |
 
 Code layout:
+- `src/training/`: schedule templates, adjustments, workout phases, and adherence
 - `src/game/`: rules engine (pure and unit-tested)
 - `src/tracking/`: live run session
 - `src/data/`: storage

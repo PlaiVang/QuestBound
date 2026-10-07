@@ -8,7 +8,7 @@ const NAV = [
   { to: '/', icon: '🧙', label: 'Hero', end: true },
   { to: '/world', icon: '🗺️', label: 'World' },
   { to: '/run', icon: '🏃', label: 'Run', run: true },
-  { to: '/quests', icon: '📜', label: 'Quests' },
+  { to: '/training', icon: '📜', label: 'Plan' },
   { to: '/runs', icon: '📖', label: 'Log' },
 ];
 

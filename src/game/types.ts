@@ -21,6 +21,7 @@ export interface Run {
   /** Coefficient of variation of pace; higher means more interval-like. */
   paceVariability: number | null;
   notes?: string;
+  training?: { sessionId: string; completed: boolean };
 }
 
 export type Units = 'km' | 'mi';

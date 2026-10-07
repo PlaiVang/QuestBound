@@ -577,3 +577,94 @@ label.field > span {
   gap: 12px;
 }
 
+.training-days {
+  border: 1px solid var(--edge);
+  margin: 16px 0;
+  padding: 12px;
+}
+
+.training-days legend {
+  font-size: 0.8rem;
+  padding: 0 4px;
+}
+
+.day-choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.day-choice input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  accent-color: var(--xp);
+}
+
+.training-preview,
+.training-adjust,
+.training-instructions {
+  margin: 16px 0;
+}
+
+.training-week > summary,
+.training-preview > summary,
+.training-adjust > summary,
+.training-instructions > summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 10px 0;
+  line-height: 1.6;
+}
+
+.training-week > summary {
+  font-family: var(--pixel);
+  font-size: 0.7rem;
+  color: var(--gold);
+}
+
+.training-preview-list {
+  padding-left: 24px;
+}
+
+.training-preview-list li {
+  padding: 10px 0;
+  line-height: 1.6;
+}
+
+.training-sessions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.training-sessions > li {
+  border-top: 1px solid var(--edge);
+  padding: 18px 0 6px;
+}
+
+.training-sessions .row {
+  margin-top: 12px;
+}
+
+.workout-instruction {
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+
+.training-instructions ol {
+  padding-left: 24px;
+  line-height: 1.8;
+}
+
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--xp);
+  outline-offset: 3px;
+}

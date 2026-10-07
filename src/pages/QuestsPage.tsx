@@ -37,6 +37,7 @@ export function QuestsPage() {
   return (
     <>
       <h1>Quest board</h1>
+      <p className="small muted">Optional prototype challenges, not training prescriptions. Follow your plan; do not add workouts to meet a quest deadline.</p>
       <section className="panel">
         <h2>Daily quest</h2>
         <ul className="list">

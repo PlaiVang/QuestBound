@@ -10,10 +10,11 @@ import { RunPage } from './pages/RunPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { StatsPage } from './pages/StatsPage';
 import { WorldPage } from './pages/WorldPage';
+import { TrainingPage } from './pages/TrainingPage';
 import { GameProvider, useGame } from './state/GameContext';
 
 function Routed() {
-  const { ready } = useGame();
+  const { ready, error } = useGame();
   if (!ready) {
     return (
       <div className="loading">
@@ -22,6 +23,14 @@ function Routed() {
       </div>
     );
   }
+  if (error) return (
+    <div className="app"><section className="panel">
+      <h1>Saved data could not be opened</h1>
+      <p role="alert">{error}</p>
+      <p>Your data has not been replaced. Restart the app to try again.</p>
+      <button className="btn" onClick={() => window.location.reload()}>Try again</button>
+    </section></div>
+  );
   return (
     <Routes>
       <Route element={<Layout />}>
@@ -31,6 +40,7 @@ function Routed() {
         <Route path="runs" element={<HistoryPage />} />
         <Route path="runs/:id" element={<RunDetailPage />} />
         <Route path="stats" element={<StatsPage />} />
+        <Route path="training" element={<TrainingPage />} />
         <Route path="world" element={<WorldPage />} />
         <Route path="quests" element={<QuestsPage />} />
         <Route path="rewards" element={<RewardsPage />} />
