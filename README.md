@@ -4,6 +4,8 @@ A running app that turns your training into a fantasy RPG. Track runs with live 
 
 ## Features
 
+Outdoor GPS runs show lightweight route-outline thumbnails in the Adventure Log, with no map-tile downloads. Pauses and signal gaps stay disconnected; manual runs and runs without usable route data keep a workout icon. Open a run for the full map and replay.
+
 **Training plans**
 - Plan includes a monthly calendar with scheduled/completed/skipped sessions and logged runs. Select a day to view its workouts, start a session, or open a run log.
 - All new live runs have a cancellable five-second countdown. Countdown time is excluded from the run and workout clocks. Resuming an existing paused run does not restart the countdown; manual logging has none.

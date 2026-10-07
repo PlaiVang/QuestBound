@@ -4,6 +4,7 @@ import { runClass } from '../game/types';
 import { formatDate, formatDistance, formatDuration, formatPace } from '../lib/format';
 import { startOfWeek } from '../lib/dates';
 import { useGame } from '../state/GameContext';
+import { RunRouteThumbnail } from '../components/RunRouteThumbnail';
 
 export function HistoryPage() {
   const { runs, game, profile } = useGame();
@@ -56,9 +57,7 @@ export function HistoryPage() {
               const res = game.runResults[r.id];
               return (
                 <Link key={r.id} to={`/runs/${r.id}`}>
-                  <div className="icon-lg" title={cls.name}>
-                    {cls.icon}
-                  </div>
+                  <RunRouteThumbnail run={r} icon={cls.icon} />
                   <div className="grow">
                     <div>
                       {formatDistance(r.distanceM, profile.units)} <span className="muted small">· {formatDuration(r.durationSec)}</span>
